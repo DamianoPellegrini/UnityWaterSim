@@ -1,0 +1,62 @@
+#pragma kernel SampleSpectrum
+
+#include "Assets/ShaderLibrary/complex.hlsl"
+
+static const float PI = 3.141592653589793;
+
+// wave vector x, 1 / magnitude, wave vector z, frequency
+RWTexture2D<float4> _WavesData;
+RWTexture2D<float> _SpectrumSamples;
+
+// Spectrum
+float _WindSpeed;
+float _WindDirection;
+float _SuppressThreshold;
+
+// Cascades settings
+float _LengthScale;
+float _CutoffHigh;
+float _CutoffLow;
+
+// Globals?
+uint _Size;
+float _GravityAcceleration;
+float _Depth;
+
+float Frequency(float k, float g, float depth)
+{
+	return sqrt(g * k * tanh(min(k * depth, 20)));
+}
+
+float Phillips(float2 k, float g, float kLength, float2 w, float V, float ell) {
+    float L = V * V * rcp(g);
+    float cosineFac = pow(dot(k, w), 2);
+    float alpha = 0.0081;
+
+    if (L < ell) return 0;
+
+    return alpha * rcp(pow(kLength, 4)) * exp(-1 * rcp((kLength*L)*2)) * cosineFac * exp(-kLength * kLength * ell * ell);
+}
+
+[numthreads(8, 8, 1)]
+void SampleSpectrum(uint3 id : SV_DispatchThreadID)
+{
+    // Calculate k from center
+	float deltaK = 2 * PI / _LengthScale;
+	float2 k = (id.xy - (_Size * 0.5)) * deltaK;
+	float kLength = length(k);
+	
+	_SpectrumSamples[id.xy] = 0;
+	_WavesData[id.xy] = float4(k.x, 1, k.y, 0);
+
+	if (_CutoffLow <= kLength && kLength <= _CutoffHigh)
+	{
+		float omega = Frequency(kLength, _GravityAcceleration, _Depth);
+		float2 w = float2(sin(_WindDirection), cos(_WindDirection));
+
+		float spectrum = Phillips(k, _GravityAcceleration, kLength, w, _WindSpeed, _SuppressThreshold);
+
+		_SpectrumSamples[id.xy] = spectrum;
+		_WavesData[id.xy] = float4(k.x, rcp(kLength), k.y, omega);
+	}
+}

@@ -1,0 +1,54 @@
+#pragma kernel CalculateInitialSpectrum
+
+#include "Assets/ShaderLibrary/complex.hlsl"
+
+static const float PI = 3.141592653589793;
+
+// H0, complex_conj(H0)
+RWTexture2D<complex2> _H0;
+RWTexture2D<complex> _H0K;
+
+// wave vector x, 1 / wave magnitude, wave vector z, frequency
+Texture2D<float4> _WavesData;
+Texture2D<float> _SpectrumSamples;
+Texture2D<complex> _Noise;
+
+// Cascade
+float _LengthScale;
+float _CutoffHigh;
+float _CutoffLow;
+
+uint _Size;
+float _GravityAcceleration;
+float _Depth;
+
+float FrequencyDerivative(float k, float g, float depth, float omega)
+{
+	float th = tanh(min(k * depth, 20));
+	float ch = cosh(k * depth);
+	return g * (depth * k / ch / ch + th) / omega / 2;
+}
+
+[numthreads(8, 8, 1)]
+void CalculateInitialSpectrum(uint3 id : SV_DispatchThreadID)
+{
+	float deltaK = 2 * PI / _LengthScale;
+    float2 k = _WavesData[id.xy].xz;
+	float kLength = length(k);
+    float kLengthRcp = _WavesData[id.xy].y;
+
+	if (_CutoffLow <= kLength && kLength <= _CutoffHigh)
+	{
+		float omega = _WavesData[id.xy].w;
+		float dOmegadk = FrequencyDerivative(kLength, _GravityAcceleration, _Depth, omega);
+
+        float spectrumSample = _SpectrumSamples[id.xy].r;
+
+		_H0K[id.xy] = _Noise[id.xy]
+			* sqrt(2 * spectrumSample * abs(dOmegadk) / kLength * deltaK * deltaK);
+	}
+
+    complex h0K = _H0K[id.xy];
+	complex h0MinusK = _H0K[uint2((_Size - id.x) % _Size, (_Size - id.y) % _Size)];
+	_H0[id.xy] = complex2(h0K, complex_conj(h0MinusK));
+}

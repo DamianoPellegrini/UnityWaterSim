@@ -1,0 +1,18 @@
+#pragma kernel Butterfly
+#include "Assets/ShaderLibrary/complex.hlsl"
+
+static const float PI = 3.141592653589793;
+
+uint Size;
+RWTexture2D<float4> ButterflyTex;
+
+[numthreads(1, 8, 1)]
+void Butterfly(uint3 id : SV_DispatchThreadID)
+{
+    uint b = Size >> (id.x + 1);
+	complex mult = 2 * PI * complex(0, 1) / Size;
+	uint i = (2 * b * (id.y / b) + id.y % b) % Size;
+	complex twiddle = complex_exp(-mult * ((id.y / b) * b));
+	ButterflyTex[id.xy] = float4(twiddle.x, twiddle.y, i, i + b);
+	ButterflyTex[uint2(id.x, id.y + Size / 2)] = float4(-twiddle.x, -twiddle.y, i, i + b);
+}

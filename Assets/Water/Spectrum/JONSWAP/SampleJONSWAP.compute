@@ -1,0 +1,128 @@
+#pragma kernel SampleSpectrum
+
+#include "Assets/ShaderLibrary/complex.hlsl"
+
+#include "Assets/Water/Spectrum/JONSWAP/JONSWAPSpectrumParameters.cs.hlsl"
+
+static const float PI = 3.141592653589793;
+
+// wave vector x, 1 / magnitude, wave vector z, frequency
+RWTexture2D<float4> _WavesData;
+RWTexture2D<float> _SpectrumSamples;
+
+StructuredBuffer<JONSWAPSpectrumParameters> _Spectrums;
+
+// Cascades settings
+float _LengthScale;
+float _CutoffHigh;
+float _CutoffLow;
+
+// Globals?
+uint _Size;
+float _GravityAcceleration;
+float _Depth;
+
+
+float Frequency(float k, float g, float depth)
+{
+	return sqrt(g * k * tanh(min(k * depth, 20)));
+}
+
+float NormalizationFactor(float s)
+{
+	float s2 = s * s;
+	float s3 = s2 * s;
+	float s4 = s3 * s;
+	if (s < 5)
+		return -0.000564 * s4 + 0.00776 * s3 - 0.044 * s2 + 0.192 * s + 0.163;
+	else
+		return -4.80e-08 * s4 + 1.07e-05 * s3 - 9.53e-04 * s2 + 5.90e-02 * s + 3.93e-01;
+}
+
+float Cosine2s(float theta, float s)
+{
+	return NormalizationFactor(s) * pow(abs(cos(0.5 * theta)), 2 * s);
+}
+
+float SpreadPower(float omega, float peakOmega)
+{
+	if (omega > peakOmega)
+	{
+		return 9.77 * pow(abs(omega / peakOmega), -2.5);
+	}
+	else
+	{
+		return 6.97 * pow(abs(omega / peakOmega), 5);
+	}
+}
+
+float DirectionSpectrum(float theta, float omega, JONSWAPSpectrumParameters pars)
+{
+	float s = SpreadPower(omega, pars.peakOmega)
+		+ 16 * tanh(min(omega / pars.peakOmega, 20)) * pars.swell * pars.swell;
+	return lerp(2 / PI * cos(theta) * cos(theta), Cosine2s(theta - pars.angle, s), pars.spreadBlend);
+}
+
+float TMACorrection(float omega, float g, float depth)
+{
+	float omegaH = omega * sqrt(depth / g);
+	if (omegaH <= 1)
+		return 0.5 * omegaH * omegaH;
+	if (omegaH < 2)
+		return 1.0 - 0.5 * (2.0 - omegaH) * (2.0 - omegaH);
+	return 1;
+}
+
+float JONSWAP(float omega, float g, float depth, JONSWAPSpectrumParameters pars)
+{
+	float sigma;
+	if (omega <= pars.peakOmega)
+		sigma = 0.07;
+	else
+		sigma = 0.09;
+	float r = exp(-(omega - pars.peakOmega) * (omega - pars.peakOmega)
+		/ 2 / sigma / sigma / pars.peakOmega / pars.peakOmega);
+	
+	float oneOverOmega = 1 / omega;
+	float peakOmegaOverOmega = pars.peakOmega / omega;
+	float correction = TMACorrection(omega, g, depth);
+	return pars.scale * correction * pars.alpha * g * g
+		* oneOverOmega * oneOverOmega * oneOverOmega * oneOverOmega * oneOverOmega
+		* exp(-1.25 * peakOmegaOverOmega * peakOmegaOverOmega * peakOmegaOverOmega * peakOmegaOverOmega)
+		* pow(abs(pars.gamma), r);
+}
+
+float ShortWavesFade(float kLength, JONSWAPSpectrumParameters pars)
+{
+	return exp(-pars.shortWavesFade * pars.shortWavesFade * kLength * kLength);
+}
+
+[numthreads(8, 8, 1)]
+void SampleSpectrum(uint3 id : SV_DispatchThreadID)
+{
+    // Calculate k from center
+	float deltaK = 2 * PI / _LengthScale;
+	float2 k = (id.xy - (_Size * 0.5)) * deltaK;
+	float kLength = length(k);
+	
+	_SpectrumSamples[id.xy] = 0;
+	_WavesData[id.xy] = float4(k.x, 1, k.y, 0);
+
+	if (_CutoffLow <= kLength && kLength <= _CutoffHigh)
+	{
+		float kAngle = atan2(k.y, k.x);
+		float omega = Frequency(kLength, _GravityAcceleration, _Depth);
+		
+		// Local
+		float spectrum = JONSWAP(omega, _GravityAcceleration, _Depth, _Spectrums[0])
+		* DirectionSpectrum(kAngle, omega, _Spectrums[0]) * ShortWavesFade(kLength, _Spectrums[0]);
+
+		// Swell
+		if (_Spectrums[1].scale > 0)
+		spectrum += JONSWAP(omega, _GravityAcceleration, _Depth, _Spectrums[1])
+			* DirectionSpectrum(kAngle, omega, _Spectrums[1]) * ShortWavesFade(kLength, _Spectrums[1]);
+		
+		_SpectrumSamples[id.xy] = spectrum;
+		_WavesData[id.xy] = float4(k.x, rcp(kLength), k.y, omega);
+	}
+}
