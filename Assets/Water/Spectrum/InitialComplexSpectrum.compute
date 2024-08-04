@@ -1,4 +1,5 @@
 #pragma kernel CalculateInitialSpectrum
+#pragma kernel CalculateConjugateSpectrum
 
 #include "Assets/ShaderLibrary/complex.hlsl"
 
@@ -37,7 +38,9 @@ void CalculateInitialSpectrum(uint3 id : SV_DispatchThreadID)
 	float kLength = length(k);
     float kLengthRcp = _WavesData[id.xy].y;
 
-	if (_CutoffLow <= kLength && kLength <= _CutoffHigh)
+	_H0K[id.xy] = 0;
+
+	if (kLength <= _CutoffHigh && kLength >= _CutoffLow)
 	{
 		float omega = _WavesData[id.xy].w;
 		float dOmegadk = FrequencyDerivative(kLength, _GravityAcceleration, _Depth, omega);
@@ -46,9 +49,21 @@ void CalculateInitialSpectrum(uint3 id : SV_DispatchThreadID)
 
 		_H0K[id.xy] = _Noise[id.xy]
 			* sqrt(2 * spectrumSample * abs(dOmegadk) / kLength * deltaK * deltaK);
-	}
 
-    complex h0K = _H0K[id.xy];
+		// TODO: do it in 1 kernel taking -k either by sampling _WavesData and _SpectrumSample with uint2((_Size - id.x) % _Size, (_Size - id.y) % _Size)
+		// complex h0K = _Noise[id.xy]
+		// * sqrt(2 * spectrumSample * abs(dOmegadk) / kLength * deltaK * deltaK);
+		// complex h0MinusK = _Noise[uint2((_Size - id.x) % _Size, (_Size - id.y) % _Size)]
+		// * sqrt(2 * _SpectrumSamples[uint2((_Size - id.x) % _Size, (_Size - id.y) % _Size)].r * abs(dOmegadk) / kLength * deltaK * deltaK);
+		// _H0[id.xy] = complex2(h0K, complex_conj(h0MinusK));
+	}
+}
+
+
+[numthreads(8, 8, 1)]
+void CalculateConjugateSpectrum(uint3 id : SV_DispatchThreadID)
+{
+	complex h0K = _H0K[id.xy];
 	complex h0MinusK = _H0K[uint2((_Size - id.x) % _Size, (_Size - id.y) % _Size)];
 	_H0[id.xy] = complex2(h0K, complex_conj(h0MinusK));
 }

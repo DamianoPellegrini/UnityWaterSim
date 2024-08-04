@@ -37,7 +37,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     - _Derivatives_c0:
         m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
+        m_Scale: {x: 0.1, y: 0.1}
         m_Offset: {x: 0, y: 0}
     - _Derivatives_c1:
         m_Texture: {fileID: 0}
@@ -65,7 +65,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     - _Displacement_c0:
         m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
+        m_Scale: {x: 0.1, y: 0.1}
         m_Offset: {x: 0, y: 0}
     - _Displacement_c1:
         m_Texture: {fileID: 0}
@@ -138,7 +138,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _Amp: 1
-    - _BubbleDensity: 0.75
+    - _BubbleDensity: 0.7
     - _BumpScale: 1
     - _Cascade0: 1
     - _Cascade1: 1
@@ -150,10 +150,11 @@ Material:
     - _EnvironmentLightStrength: 1
     - _Foam: 0.72
     - _FoamBias: 2.55
-    - _FoamBiasLOD0: 0.84
-    - _FoamBiasLOD1: 1.83
-    - _FoamBiasLOD2: 2.72
+    - _FoamBiasLOD0: 0.5
+    - _FoamBiasLOD1: 1.7
+    - _FoamBiasLOD2: 1.94
     - _FoamScale: 2.4
+    - _FogDensity: 1.25
     - _FogScale: 4.7
     - _FrenselPow: 5
     - _FrenselPowRefr: 51.4
@@ -162,20 +163,21 @@ Material:
     - _Glossiness: 0.631
     - _GlossyReflections: 1
     - _HeightScale: 1
-    - _LOD_scale: 1
+    - _LOD_scale: 2.57
     - _MaxGloss: 0.91
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.02
-    - _Roughness: 0.09
+    - _RefractionStrength: 1
+    - _Roughness: 0.05
     - _RoughnessScale: 0.0044
     - _SSSBase: -0.1
     - _SSSHeight: 2.71
     - _SSSScale: 4.8
     - _SSSStrength: 0.133
     - _Scale: 30.2
-    - _ScatterShadowStrength: 0.3
+    - _ScatterShadowStrength: 0.15
     - _ScatterStrength: 0.1
     - _SmoothnessTextureChannel: 0
     - _Specular: 129
@@ -183,13 +185,14 @@ Material:
     - _SpecularScale: 1
     - _SrcBlend: 1
     - _UVSec: 0
-    - _WavePeakScatterStrength: 1
+    - _WavePeakScatterStrength: 0.1
     - _ZWrite: 1
     m_Colors:
     - _BubbleColor: {r: 0, g: 0.23913395, b: 0.2509804, a: 1}
     - _Color: {r: 0.03457636, g: 0.12297464, b: 0.1981132, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _FoamColor: {r: 1, g: 1, b: 1, a: 1}
+    - _FoamColor: {r: 1, g: 1, b: 1, a: 0.1764706}
+    - _FogColor: {r: 0, g: 0.23529412, b: 0.24705882, a: 1}
     - _MainTex: {r: 1, g: 1, b: 1, a: 1}
     - _ReflectionColor: {r: 0.8679245, g: 0.8679245, b: 0.8679245, a: 1}
     - _SSS: {r: 0.10453009, g: 0.8207547, b: 0.80671114, a: 1}

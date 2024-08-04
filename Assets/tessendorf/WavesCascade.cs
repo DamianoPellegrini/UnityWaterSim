@@ -56,7 +56,7 @@ public class WavesCascade
         precomputedData = FastFourierTransform.CreateRenderTexture(size, RenderTextureFormat.ARGBFloat);
         displacement = FastFourierTransform.CreateRenderTexture(size, RenderTextureFormat.ARGBFloat);
         derivatives = FastFourierTransform.CreateRenderTexture(size, RenderTextureFormat.ARGBFloat, true);
-        turbulence = FastFourierTransform.CreateRenderTexture(size, RenderTextureFormat.ARGBFloat, true);
+        turbulence = FastFourierTransform.CreateRenderTexture(size, RenderTextureFormat.RFloat, true);
         paramsBuffer = new ComputeBuffer(2, 8 * sizeof(float));
 
         buffer = FastFourierTransform.CreateRenderTexture(size);

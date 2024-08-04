@@ -1,0 +1,42 @@
+#pragma kernel CalculateFourierSignals
+
+#include "Assets/ShaderLibrary/complex.hlsl"
+
+RWTexture2D<complex> _Dx_Dz;
+RWTexture2D<complex> _Dy_Dxz;
+RWTexture2D<complex> _Dyx_Dyz;
+RWTexture2D<complex> _Dxx_Dzz;
+
+Texture2D<complex2> _H0;
+// wave vector x, 1 / wave magnitude, wave vector z, omega
+Texture2D<float4> _WavesData;
+float _Time;
+
+[numthreads(8,8,1)]
+void CalculateFourierSignals(uint3 id : SV_DispatchThreadID)
+{
+	float2 wave = _WavesData[id.xy].xz;
+    float kLenRcp = _WavesData[id.xy].y;
+    float omega = _WavesData[id.xy].w;
+
+	float phase = omega * _Time;
+	complex exponent = complex_euler(phase);
+	complex h = complex_add(complex_mul(_H0[id.xy].xy, exponent), complex_mul(_H0[id.xy].zw, complex_conj(exponent)));
+	complex ih = float2(-h.y, h.x);
+	
+	complex displacementX = ih * wave.x * kLenRcp;
+	complex displacementY = h;
+	complex displacementZ = ih * wave.y * kLenRcp;
+
+	complex displacementX_dx = -h * wave.x * wave.x * kLenRcp;
+	complex displacementY_dx = ih * wave.x;
+	complex displacementZ_dx = -h * wave.x * wave.y * kLenRcp;
+
+	complex displacementY_dz = ih * wave.y;
+	complex displacementZ_dz = -h * wave.y * wave.y * kLenRcp;
+	
+	_Dx_Dz[id.xy] = complex(displacementX.x - displacementZ.y, displacementX.y + displacementZ.x);
+	_Dy_Dxz[id.xy] = complex(displacementY.x - displacementZ_dx.y, displacementY.y + displacementZ_dx.x);
+	_Dyx_Dyz[id.xy] = complex(displacementY_dx.x - displacementY_dz.y, displacementY_dx.y + displacementY_dz.x);
+	_Dxx_Dzz[id.xy] = complex(displacementX_dx.x - displacementZ_dz.y, displacementX_dx.y + displacementZ_dz.x);
+}

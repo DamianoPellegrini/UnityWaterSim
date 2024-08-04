@@ -1,27 +1,11 @@
 #pragma kernel SampleSpectrum
 
 #include "Assets/ShaderLibrary/complex.hlsl"
+#include "Assets/Water/Spectrum/SpectrumSamplerCommon.hlsl"
 
 #include "Assets/Water/Spectrum/JONSWAP/JONSWAPSpectrumParameters.cs.hlsl"
 
-static const float PI = 3.141592653589793;
-
-// wave vector x, 1 / magnitude, wave vector z, frequency
-RWTexture2D<float4> _WavesData;
-RWTexture2D<float> _SpectrumSamples;
-
 StructuredBuffer<JONSWAPSpectrumParameters> _Spectrums;
-
-// Cascades settings
-float _LengthScale;
-float _CutoffHigh;
-float _CutoffLow;
-
-// Globals?
-uint _Size;
-float _GravityAcceleration;
-float _Depth;
-
 
 float Frequency(float k, float g, float depth)
 {
@@ -108,9 +92,9 @@ void SampleSpectrum(uint3 id : SV_DispatchThreadID)
 	_SpectrumSamples[id.xy] = 0;
 	_WavesData[id.xy] = float4(k.x, 1, k.y, 0);
 
-	if (_CutoffLow <= kLength && kLength <= _CutoffHigh)
+	if (kLength <= _CutoffHigh && kLength >= _CutoffLow)
 	{
-		float kAngle = atan2(k.y, k.x);
+		float kAngle = FastAtan2(k.y, k.x);
 		float omega = Frequency(kLength, _GravityAcceleration, _Depth);
 		
 		// Local

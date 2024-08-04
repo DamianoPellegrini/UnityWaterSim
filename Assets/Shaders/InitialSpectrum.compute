@@ -99,11 +99,10 @@ float DirectionSpectrum(float theta, float omega, SpectrumParameters pars)
 
 float TMACorrection(float omega, float g, float depth)
 {
-	float omegaH = omega * sqrt(depth / g);
-	if (omegaH <= 1)
-		return 0.5 * omegaH * omegaH;
-	if (omegaH < 2)
-		return 1.0 - 0.5 * (2.0 - omegaH) * (2.0 - omegaH);
+	float omegaH = 0;
+	omegaH = omega * sqrt(depth / g);
+	if (omegaH <= 1) return 0.5 * omegaH * omegaH;
+	if (omegaH < 2) return 1.0 - 0.5 * (2.0 - omegaH) * (2.0 - omegaH);
 	return 1;
 }
 

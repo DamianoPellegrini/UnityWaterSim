@@ -14,18 +14,19 @@ RendererList (ovvero i gameobject col component surface nel quale scrivere i ris
 
 ### Dettagli implementazione
 
-- Settings globale della pipeline dove si tiene la dimensione della simulazione, e istanze con precomputazioni di FFT.
+- :tick: Settings globale della pipeline dove si tiene la dimensione della simulazione, e istanze con precomputazioni di FFT.
 - Configurazione spettro come scriptable object che ricalcolano quando cambia: spettro iniziale, valori gaussiani iniziali (e butterfly?)
   - Due scriptable object diversi inherited che generano campioni dello spettro con k e usano quel campione per generare lo spettro complesso per FFT.
+  - Non posso farlo a design time e tocca farlo a runtime dato che voglio che lo spettro sia cambiabile dinamicamente, riaggiornare l'iniziale dopo i changes.
 - Configurazione Cascades come component che dispatcha FFT di evoluzione con tempo.
 - Materiale URP con:
-  - Subsurface scattering
-  - Refraction
+  - :tick: Subsurface scattering
+  - :tick: Refraction
   - Caustics
   - Custom surface fog
-  - Underwater fog
+  - :tick: Underwater fog
   - Foam & whitecaps
-  - LOD & static batching
+  - :tick: LOD & static batching
 
 ## Simulazione Shorelines
 
@@ -34,7 +35,7 @@ Texture globale intera scena.
 
 ## Simulazione fisica
 
-Simulazione di tessendorf con parametri identici a quella per il rendering, evolvo lo spettro secondo l'average readback time, tenendo conto di tanti sample quanti gli FPS per avere una media poco sballata.
+Simulazione di tessendorf ridotta con parametri identici a quella per il rendering, evolvo lo spettro secondo l'average readback time, tenendo conto di tanti sample quanti gli FPS per avere una media poco sballata.
 
 ## simulazione particelle
 

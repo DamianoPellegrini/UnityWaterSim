@@ -1,0 +1,112 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel PrecomputeTwiddleFactorsAndInputIndices
+#pragma kernel HorizontalStepFFT
+#pragma kernel VerticalStepFFT
+#pragma kernel HorizontalStepInverseFFT
+#pragma kernel VerticalStepInverseFFT
+#pragma kernel Scale
+#pragma kernel Permute
+
+#include "Assets/ShaderLibrary/complex.hlsl"
+
+static const float PI = 3.141592653589793;
+
+uint _Size;
+RWTexture2D<float4> _ButterflyTexture;
+
+[numthreads(1, 8, 1)]
+void PrecomputeTwiddleFactorsAndInputIndices(uint3 id : SV_DispatchThreadID)
+{
+    uint b = _Size >> (id.x + 1);
+	complex mult = 2 * PI * complex(0, 1) / _Size;
+	uint i = (2 * b * (id.y / b) + id.y % b) % _Size;
+	complex twiddle = complex_exp(-mult * ((id.y / b) * b));
+	_ButterflyTexture[id.xy] = float4(twiddle.x, twiddle.y, i, i + b);
+	_ButterflyTexture[uint2(id.x, id.y + _Size / 2)] = float4(-twiddle.x, -twiddle.y, i, i + b);
+}
+
+uint _Step;
+bool _PingPong;
+
+RWTexture2D<complex> _Buffer0;
+RWTexture2D<complex> _Buffer1;
+
+[numthreads(8, 8, 1)]
+void HorizontalStepFFT(uint3 id : SV_DispatchThreadID)
+{
+	float4 data = _ButterflyTexture[uint2(_Step, id.x)];
+	uint2 inputsIndices = (uint2)data.ba;
+	if (_PingPong)
+	{
+		_Buffer1[id.xy] = _Buffer0[uint2(inputsIndices.x, id.y)]
+			+ complex_mul(data.rg, _Buffer0[uint2(inputsIndices.y, id.y)]);
+	}
+	else
+	{
+		_Buffer0[id.xy] = _Buffer1[uint2(inputsIndices.x, id.y)]
+			+ complex_mul(data.rg, _Buffer1[uint2(inputsIndices.y, id.y)]);
+	}
+}
+
+[numthreads(8, 8, 1)]
+void VerticalStepFFT(uint3 id : SV_DispatchThreadID)
+{
+	float4 data = _ButterflyTexture[uint2(_Step, id.y)];
+	uint2 inputsIndices = (uint2)data.ba;
+	if (_PingPong)
+	{
+		_Buffer1[id.xy] = _Buffer0[uint2(id.x, inputsIndices.x)]
+			+ complex_mul(data.rg, _Buffer0[uint2(id.x, inputsIndices.y)]);
+	}
+	else
+	{
+		_Buffer0[id.xy] = _Buffer1[uint2(id.x, inputsIndices.x)]
+			+ complex_mul(data.rg, _Buffer1[uint2(id.x, inputsIndices.y)]);
+	}
+}
+
+[numthreads(8, 8, 1)]
+void HorizontalStepInverseFFT(uint3 id : SV_DispatchThreadID)
+{
+	float4 data = _ButterflyTexture[uint2(_Step, id.x)];
+	uint2 inputsIndices = (uint2)data.ba;
+	if (_PingPong)
+	{
+		_Buffer1[id.xy] = _Buffer0[uint2(inputsIndices.x, id.y)]
+			+ complex_mul(complex_conj(data.rg), _Buffer0[uint2(inputsIndices.y, id.y)]);
+	}
+	else
+	{
+		_Buffer0[id.xy] = _Buffer1[uint2(inputsIndices.x, id.y)]
+			+ complex_mul(complex_conj(data.rg), _Buffer1[uint2(inputsIndices.y, id.y)]);
+	}
+}
+
+[numthreads(8, 8, 1)]
+void VerticalStepInverseFFT(uint3 id : SV_DispatchThreadID)
+{
+	float4 data = _ButterflyTexture[uint2(_Step, id.y)];
+	uint2 inputsIndices = (uint2)data.ba;
+	if (_PingPong)
+	{
+		_Buffer1[id.xy] = _Buffer0[uint2(id.x, inputsIndices.x)]
+			+ complex_mul(complex_conj(data.rg), _Buffer0[uint2(id.x, inputsIndices.y)]);
+	}
+	else
+	{
+		_Buffer0[id.xy] = _Buffer1[uint2(id.x, inputsIndices.x)]
+			+ complex_mul(complex_conj(data.rg), _Buffer1[uint2(id.x, inputsIndices.y)]);
+	}
+}
+
+[numthreads(8, 8, 1)]
+void Scale(uint3 id : SV_DispatchThreadID)
+{
+	_Buffer0[id.xy] = _Buffer0[id.xy] / _Size / _Size;
+}
+
+[numthreads(8, 8, 1)]
+void Permute(uint3 id : SV_DispatchThreadID)
+{
+	_Buffer0[id.xy] = _Buffer0[id.xy] * (1.0 - 2.0 * ((id.x + id.y) % 2));
+}

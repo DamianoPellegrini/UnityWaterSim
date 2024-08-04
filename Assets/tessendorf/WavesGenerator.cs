@@ -1,4 +1,5 @@
-﻿using UnityEditor;
+﻿using Unity.VisualScripting;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -32,7 +33,6 @@ public class WavesGenerator : MonoBehaviour
     [SerializeField]
     ComputeShader texturesMergerShader;
 
-    [SerializeField]
     Texture2D gaussianNoise;
     FastFourierTransform fft;
     Texture2D physicsReadback;
@@ -41,7 +41,7 @@ public class WavesGenerator : MonoBehaviour
     {
         // Application.targetFrameRate = -1;
         fft = new FastFourierTransform(size, fftShader);
-        // gaussianNoise = GetNoiseTexture(size);
+        gaussianNoise = GetNoiseTexture(size);
 
         cascade0 = new WavesCascade(size, initialSpectrumShader, timeDependentSpectrumShader, texturesMergerShader, fft, gaussianNoise);
         cascade1 = new WavesCascade(size, initialSpectrumShader, timeDependentSpectrumShader, texturesMergerShader, fft, gaussianNoise);
@@ -60,13 +60,19 @@ public class WavesGenerator : MonoBehaviour
         cascade1.CalculateInitials(wavesSettings, lengthScale1, boundary1, boundary2);
         cascade2.CalculateInitials(wavesSettings, lengthScale2, boundary2, 9999);
 
+        // TODO: remove dups
         Shader.SetGlobalFloat("LengthScale0", lengthScale0);
         Shader.SetGlobalFloat("LengthScale1", lengthScale1);
         Shader.SetGlobalFloat("LengthScale2", lengthScale2);
+        Shader.SetGlobalFloat("_LengthScale0", lengthScale0);
+        Shader.SetGlobalFloat("_LengthScale1", lengthScale1);
+        Shader.SetGlobalFloat("_LengthScale2", lengthScale2);
     }
 
     private void Update()
     {
+        if (cascade0 == null || cascade1 == null || cascade2 == null) return;
+
         if (alwaysRecalculateInitials)
         {
             InitialiseCascades();
@@ -102,9 +108,8 @@ public class WavesGenerator : MonoBehaviour
 #if UNITY_EDITOR
         if (saveIntoAssetFile)
         {
-            var filename = "GaussianNoiseTexture" + size.ToString() + "x" + size.ToString();
-            var defPath = "Assets/GaussianNoiseTextures/";
-            var path = AssetDatabase.IsValidFolder(defPath) ? AssetDatabase.CreateFolder("Assets/", "GaussianNoiseTextures") : defPath;
+            string filename = "GaussianNoiseTexture" + size.ToString() + "x" + size.ToString();
+            string path = "Assets/Resources/GaussianNoiseTextures/";
             AssetDatabase.CreateAsset(noise, path + filename + ".asset");
             Debug.Log("Texture \"" + filename + "\" was created at path \"" + path + "\".");
         }
@@ -119,9 +124,9 @@ public class WavesGenerator : MonoBehaviour
 
     private void OnDestroy()
     {
-        cascade0.Dispose();
-        cascade1.Dispose();
-        cascade2.Dispose();
+        if (cascade0 != null) { cascade0.Dispose(); }
+        if (cascade1 != null) { cascade1.Dispose(); }
+        if (cascade2 != null) { cascade2.Dispose(); }
     }
 
     void RequestReadbacks()

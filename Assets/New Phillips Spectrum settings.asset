@@ -15,11 +15,7 @@ MonoBehaviour:
   g: 9.81
   depth: 500
   lambda: 1
-  wavesTex: {fileID: 0}
-  samplesTex: {fileID: 0}
-  complexInitialSpectrumTexK: {fileID: 0}
-  complexInitialSpectrumTex: {fileID: 0}
-  noise: {fileID: 0}
-  windSpeed: 20
-  windDirection: 32
-  suppressThreshold: 0.001
+  alpha: 0.0001
+  windSpeed: 2
+  windDirection: 9
+  suppressThreshold: 0.00001

@@ -14,27 +14,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   g: 9.81
   depth: 500
-  lambda: 1
-  wavesTex: {fileID: 0}
-  samplesTex: {fileID: 0}
-  complexInitialSpectrumTexK: {fileID: 0}
-  complexInitialSpectrumTex: {fileID: 0}
-  noise: {fileID: 0}
-  local:
+  lambda: 0.7
+  localBand:
     scale: 1
     windSpeed: 0.5
-    windDirection: 76
+    windDirection: 330.19
     fetch: 100000
     spreadBlend: 1
-    swell: 0.01
-    shortWavesFade: 0.01
+    swell: 0.1
+    shortWavesFade: 0.1
     peakEnhancement: 3.3
-  swell:
-    scale: 0.2
-    windSpeed: 10
-    windDirection: 50
+  swellBand:
+    scale: 0.3
+    windSpeed: 1
+    windDirection: 0
     fetch: 400000
     spreadBlend: 1
     swell: 1
-    shortWavesFade: 0.01
+    shortWavesFade: 0.05
     peakEnhancement: 3.3

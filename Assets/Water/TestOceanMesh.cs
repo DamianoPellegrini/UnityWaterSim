@@ -1,10 +1,11 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using Water;
 
-public class OceanMesh : MonoBehaviour
+public class TestOceanMesh : MonoBehaviour
 {
     [SerializeField] 
-    WavesGenerator wavesGenerator;
+    WaterSurface waterSurface;
     [SerializeField]
     Transform viewer;
     [SerializeField]
@@ -38,17 +39,17 @@ public class OceanMesh : MonoBehaviour
         if (viewer == null)
             viewer = Camera.main.transform;
 
-        oceanMaterial.SetTexture("_Displacement_c0", wavesGenerator.cascade0.Displacement);
-        oceanMaterial.SetTexture("_Derivatives_c0", wavesGenerator.cascade0.Derivatives);
-        oceanMaterial.SetTexture("_Turbulence_c0", wavesGenerator.cascade0.Turbulence);
+        oceanMaterial.SetTexture("_Displacement_c0", waterSurface.cascade0.displacement);
+        oceanMaterial.SetTexture("_Derivatives_c0", waterSurface.cascade0.derivatives);
+        oceanMaterial.SetTexture("_Turbulence_c0", waterSurface.cascade0.turbulence);
 
-        oceanMaterial.SetTexture("_Displacement_c1", wavesGenerator.cascade1.Displacement);
-        oceanMaterial.SetTexture("_Derivatives_c1", wavesGenerator.cascade1.Derivatives);
-        oceanMaterial.SetTexture("_Turbulence_c1", wavesGenerator.cascade1.Turbulence);
+        oceanMaterial.SetTexture("_Displacement_c1", waterSurface.cascade1.displacement);
+        oceanMaterial.SetTexture("_Derivatives_c1", waterSurface.cascade1.derivatives);
+        oceanMaterial.SetTexture("_Turbulence_c1", waterSurface.cascade1.turbulence);
 
-        oceanMaterial.SetTexture("_Displacement_c2", wavesGenerator.cascade2.Displacement);
-        oceanMaterial.SetTexture("_Derivatives_c2", wavesGenerator.cascade2.Derivatives);
-        oceanMaterial.SetTexture("_Turbulence_c2", wavesGenerator.cascade2.Turbulence);
+        oceanMaterial.SetTexture("_Displacement_c2", waterSurface.cascade2.displacement);
+        oceanMaterial.SetTexture("_Derivatives_c2", waterSurface.cascade2.derivatives);
+        oceanMaterial.SetTexture("_Turbulence_c2", waterSurface.cascade2.turbulence);
 
 
         materials = new Material[3];
@@ -90,6 +91,18 @@ public class OceanMesh : MonoBehaviour
 
     void UpdateMaterials()
     {
+        oceanMaterial.SetTexture("_Displacement_c0", waterSurface.cascade0.displacement);
+        oceanMaterial.SetTexture("_Derivatives_c0", waterSurface.cascade0.derivatives);
+        oceanMaterial.SetTexture("_Turbulence_c0", waterSurface.cascade0.turbulence);
+
+        oceanMaterial.SetTexture("_Displacement_c1", waterSurface.cascade1.displacement);
+        oceanMaterial.SetTexture("_Derivatives_c1", waterSurface.cascade1.derivatives);
+        oceanMaterial.SetTexture("_Turbulence_c1", waterSurface.cascade1.turbulence);
+
+        oceanMaterial.SetTexture("_Displacement_c2", waterSurface.cascade2.displacement);
+        oceanMaterial.SetTexture("_Derivatives_c2", waterSurface.cascade2.derivatives);
+        oceanMaterial.SetTexture("_Turbulence_c2", waterSurface.cascade2.turbulence);
+
         if (updateMaterialProperties && !showMaterialLods)
         {
             for (int i = 0; i < 3; i++)
