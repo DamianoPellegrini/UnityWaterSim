@@ -27,7 +27,7 @@ namespace Water.Spectrum
 
         [Header("Wind parameters")]
 
-        [Min(0)]
+        [Min(0.01f)]
         public float windSpeed;
 
         [Range(0, 359)]

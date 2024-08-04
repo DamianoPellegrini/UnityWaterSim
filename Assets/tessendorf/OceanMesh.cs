@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class OceanMesh : MonoBehaviour
 {
-    [SerializeField] 
+    [SerializeField]
     WavesGenerator wavesGenerator;
     [SerializeField]
     Transform viewer;
@@ -242,7 +242,7 @@ public class OceanMesh : MonoBehaviour
         go.transform.SetParent(transform);
         go.transform.localPosition = Vector3.zero;
         MeshFilter meshFilter = go.AddComponent<MeshFilter>();
-        meshFilter.mesh = mesh;  
+        meshFilter.mesh = mesh;
         MeshRenderer meshRenderer = go.AddComponent<MeshRenderer>();
         meshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         meshRenderer.receiveShadows = true;

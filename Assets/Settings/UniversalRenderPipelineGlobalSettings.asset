@@ -104,7 +104,7 @@ MonoBehaviour:
     - rid: 1306259912070529086
       type: {class: WaterSimulationSettings, ns: Water, asm: Assembly-CSharp}
       data:
-        _renderingPatchSize: 1024
+        _renderingPatchSize: 256
         _physicsPatchSize: 128
         _phillipsSamplerShader: {fileID: 7200000, guid: 3a391a5eb4afa46e3b0783ff56384d12, type: 3}
         _JONSWAPSamplerShader: {fileID: 7200000, guid: 439acec85b5b1491d82d67cb0ed956b4, type: 3}

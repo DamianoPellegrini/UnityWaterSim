@@ -48,7 +48,7 @@ namespace Water.Spectrum
             DyDxz = WaterSimulationSettings.CreateRenderTexture($"{name}_{nameof(DyDxz)}", size, RenderTextureFormat.RGFloat, false);
             DyxDyz = WaterSimulationSettings.CreateRenderTexture($"{name}_{nameof(DyxDyz)}", size, RenderTextureFormat.RGFloat, false);
             DxxDzz = WaterSimulationSettings.CreateRenderTexture($"{name}_{nameof(DxxDzz)}", size, RenderTextureFormat.RGFloat, false);
-            displacement = WaterSimulationSettings.CreateRenderTexture($"{name}_{nameof(displacement)}", size, RenderTextureFormat.RGB111110Float, false);
+            displacement = WaterSimulationSettings.CreateRenderTexture($"{name}_{nameof(displacement)}", size, RenderTextureFormat.ARGBFloat, false);
             derivatives = WaterSimulationSettings.CreateRenderTexture($"{name}_{nameof(derivatives)}", size, RenderTextureFormat.ARGBFloat, true);
             turbulence = WaterSimulationSettings.CreateRenderTexture($"{name}_{nameof(turbulence)}", size, RenderTextureFormat.RFloat, true);
         }

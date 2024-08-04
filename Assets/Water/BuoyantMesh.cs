@@ -1,27 +1,31 @@
+
+using System.Collections.Generic;
 using System.Drawing;
 using UnityEngine;
 using Water;
 using Water.Spectrum;
 
-public class Buoyant : MonoBehaviour
+public class BuoyantMesh : MonoBehaviour
 {
     public WaterSurface displacementSource;
     private Rigidbody rb;
-    private BuoyantPoint[] buoyantPoints;
+    private MeshFilter meshFilter;
 
     public float buoyantForce = 1;
     public float underwaterDrag = 1;
 
     private float drag;
-
-    public Vector2 Test;
+    
+    private List<Vector3> vector3s = new List<Vector3>();
 
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        meshFilter = GetComponent<MeshFilter>();
         drag = rb.linearDamping;
 
-        buoyantPoints = GetComponentsInChildren<BuoyantPoint>();
+
+        meshFilter.mesh.GetVertices(vector3s);
     }
 
     void FixedUpdate()
@@ -29,17 +33,12 @@ public class Buoyant : MonoBehaviour
         if (rb == null) return;
         if (displacementSource == null) return;
 
-        if (buoyantPoints.Length == 0) {
-            ApplyBuoyantForce(transform.position);
-        }
 
-        foreach (var point in buoyantPoints)
+
+
+        foreach (var point in vector3s)
         {
-            ApplyBuoyantForce(point.transform.position);
-            // ApplyBuoyantForce(point.transform.position + new Vector3(1.02f, 0, 1.02f));
-            // ApplyBuoyantForce(point.transform.position + new Vector3(-1.02f, 0, 1.02f));
-            // ApplyBuoyantForce(point.transform.position + new Vector3(1.02f, 0, -1.02f));
-            // ApplyBuoyantForce(point.transform.position + new Vector3(-1.02f, 0, -1.02f));
+            ApplyBuoyantForce(point);
         }
     }
 
@@ -54,17 +53,16 @@ public class Buoyant : MonoBehaviour
                 var windSpeed = 0.0f;
                 if (displacementSource.spectrum is JONSWAPSpectrumSettings jonswap)
                 {
-                    windVector.x = Mathf.Cos(jonswap.localBand.windDirection);
+                    windVector.x = -Mathf.Cos(jonswap.localBand.windDirection);
                     windVector.y = -Mathf.Sin(jonswap.localBand.windDirection);
                     windSpeed = jonswap.localBand.windSpeed;
                 }
                 else if (displacementSource.spectrum is PhillipsSpectrumSettings phillips)
                 {
                     windVector.x = Mathf.Cos(phillips.windDirection);
-                    windVector.y = -Mathf.Sin(phillips.windDirection);
+                    windVector.y = Mathf.Sin(phillips.windDirection);
                     windSpeed = phillips.windSpeed;
                 }
-                Test = windVector;
 
                 var force = new Vector3(displacement.x * buoyantForce,
                                        (displacement.y - position.y) * buoyantForce * gravity,
@@ -73,8 +71,8 @@ public class Buoyant : MonoBehaviour
                 force.x += windVector.x * windSpeed * 0.01f;
                 force.z += windVector.y * windSpeed * 0.01f;
 
-                if (buoyantPoints.Length > 0)
-                    force /= buoyantPoints.Length;
+                if (vector3s.Count > 0)
+                    force /= vector3s.Count;
 
                 rb.linearDamping = underwaterDrag;
                 rb.AddForceAtPosition(force, position, ForceMode.Acceleration);

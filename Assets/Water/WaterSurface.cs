@@ -1,4 +1,5 @@
 using System;
+using UnityEditor.PackageManager.Requests;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Water.Spectrum;
@@ -23,6 +24,10 @@ namespace Water
         private SpectrumCascade cascadePhys;
         private FastFourierTransform renderingFFT;
         private FastFourierTransform physicsFFT;
+        private Texture2D physicsReadback;
+
+        private float readbackRequestTime = float.NaN;
+        private float deltaReadbackTime;
 
         void InitOrReset(WaterSimulationSettings settings, bool shouldDispose = false)
         {
@@ -41,6 +46,7 @@ namespace Water
             cascadePhys = new SpectrumCascade($"{name}_{nameof(cascadePhys)}", (int)settings.physicsPatchSize, 250, 0.0001f, boundary1);
             renderingFFT = new FastFourierTransform((int)settings.renderingPatchSize, settings.FFTShader);
             physicsFFT = new FastFourierTransform((int)settings.physicsPatchSize, settings.FFTShader);
+            physicsReadback = new Texture2D((int)settings.physicsPatchSize,(int)settings.physicsPatchSize);
         }
 
         Action<WaterSimulationSettings, string> OnSettingsUpdate => (settings, name) =>
@@ -50,7 +56,7 @@ namespace Water
 
         void OnEnable()
         {
-            InitOrReset(GraphicsSettings.GetRenderPipelineSettings<WaterSimulationSettings>());
+            InitOrReset(GraphicsSettings.GetRenderPipelineSettings<WaterSimulationSettings>(), true);
             GraphicsSettings.Subscribe(OnSettingsUpdate);
         }
 
@@ -97,7 +103,7 @@ namespace Water
             spectrum.CalculateDisplacement(cascade2, renderingFFT, Time.deltaTime);
         }
 
-        void sFixedUpdate()
+        void FixedUpdate()
         {
             if (spectrum == null) return;
             if (gaussianNoise == null) return;
@@ -108,8 +114,50 @@ namespace Water
 
             spectrum.SampleSpectrum(cascadePhys);
             spectrum.CalculateInitials(cascadePhys, gaussianNoise);
-            // spectrum.Evolve(cascadePhys, Time.time + averageReadbackTime, Time.deltaTime);
-            // TODO: Ask for readback
+            spectrum.Evolve(cascadePhys, Time.time + deltaReadbackTime);
+            spectrum.CalculateDisplacement(cascadePhys, physicsFFT, Time.deltaTime);
+            RequestReadbacks();
+        }
+
+        void RequestReadbacks()
+        {
+            if (!float.IsNaN(readbackRequestTime)) return;
+            readbackRequestTime = Time.time;
+            AsyncGPUReadback.Request(cascade0.displacement, 0, TextureFormat.RGBAFloat, OnCompleteReadback);
+        }
+
+        public float GetWaterHeight(Vector3 position)
+        {
+            return GetWaterDisplacement(position).y;
+            Vector3 displacement = GetWaterDisplacement(position);
+            displacement = GetWaterDisplacement(position - displacement);
+            displacement = GetWaterDisplacement(position - displacement);
+
+            return GetWaterDisplacement(position - displacement).y;
+        }
+
+        public Vector3 GetWaterDisplacement(Vector3 position)
+        {
+            Color c = physicsReadback.GetPixelBilinear(position.x / lengthScale0, position.z / lengthScale0);
+            return new Vector3(c.r, c.g, c.b);
+        }
+
+        void OnCompleteReadback(AsyncGPUReadbackRequest request) => OnCompleteReadback(request, physicsReadback);
+
+        void OnCompleteReadback(AsyncGPUReadbackRequest request, Texture2D result)
+        {
+            if (request.hasError)
+            {
+                Debug.Log("GPU readback error detected.");
+                return;
+            }
+            if (result != null)
+            {
+                deltaReadbackTime = Time.time - readbackRequestTime;
+                readbackRequestTime = float.NaN;
+                result.LoadRawTextureData(request.GetData<Color>());
+                result.Apply();
+            }
         }
 
         void Dispose()
@@ -120,6 +168,7 @@ namespace Water
             if (cascadePhys != null) { cascadePhys.Dispose(); }
             if (renderingFFT != null) { renderingFFT.Dispose(); }
             if (physicsFFT != null) { physicsFFT.Dispose(); }
+            if (physicsReadback != null) { DestroyImmediate(physicsReadback); }
         }
     }
 }

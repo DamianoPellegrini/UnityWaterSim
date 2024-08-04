@@ -4,25 +4,19 @@ using Water;
 
 public class TestOceanMesh : MonoBehaviour
 {
-    [SerializeField] 
-    WaterSurface waterSurface;
-    [SerializeField]
-    Transform viewer;
-    [SerializeField]
-    Material oceanMaterial;
-    [SerializeField]
-    bool updateMaterialProperties;
-    [SerializeField]
-    bool showMaterialLods;
+    public WaterSurface waterSurface;
+    public Transform viewer;
+    public Material oceanMaterial;
+    public bool updateMaterialProperties;
+    public bool showMaterialLods;
 
-    [SerializeField]
-    float lengthScale = 10;
-    [SerializeField, Range(1, 100)]
-    int vertexDensity = 30;
-    [SerializeField, Range(0, 8)]
-    int clipLevels = 8;
-    [SerializeField, Range(0, 100)]
-    float skirtSize = 50;
+    public float lengthScale = 10;
+    [Range(1, 100)]
+    public int vertexDensity = 30;
+    [Range(0, 8)]
+    public int clipLevels = 8;
+    [Range(0, 100)]
+    public float skirtSize = 50;
 
     List<Element> rings = new List<Element>();
     List<Element> trims = new List<Element>();
@@ -91,18 +85,6 @@ public class TestOceanMesh : MonoBehaviour
 
     void UpdateMaterials()
     {
-        oceanMaterial.SetTexture("_Displacement_c0", waterSurface.cascade0.displacement);
-        oceanMaterial.SetTexture("_Derivatives_c0", waterSurface.cascade0.derivatives);
-        oceanMaterial.SetTexture("_Turbulence_c0", waterSurface.cascade0.turbulence);
-
-        oceanMaterial.SetTexture("_Displacement_c1", waterSurface.cascade1.displacement);
-        oceanMaterial.SetTexture("_Derivatives_c1", waterSurface.cascade1.derivatives);
-        oceanMaterial.SetTexture("_Turbulence_c1", waterSurface.cascade1.turbulence);
-
-        oceanMaterial.SetTexture("_Displacement_c2", waterSurface.cascade2.displacement);
-        oceanMaterial.SetTexture("_Derivatives_c2", waterSurface.cascade2.derivatives);
-        oceanMaterial.SetTexture("_Turbulence_c2", waterSurface.cascade2.turbulence);
-
         if (updateMaterialProperties && !showMaterialLods)
         {
             for (int i = 0; i < 3; i++)

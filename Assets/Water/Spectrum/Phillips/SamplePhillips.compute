@@ -39,7 +39,7 @@ void SampleSpectrum(uint3 id : SV_DispatchThreadID)
 	{
 		float omega = Frequency(kLength, _GravityAcceleration, _Depth);
 		float wRad = radians(_WindDirection);
-		float2 w = float2(sin(wRad), cos(wRad));
+		float2 w = float2(cos(wRad), sin(wRad));
 
 		float spectrum = Phillips(k, _GravityAcceleration, kLength, w, _WindSpeed, _SuppressThreshold);
 
