@@ -4,6 +4,7 @@ namespace Water {
 
     [ExecuteInEditMode]
     [DisallowMultipleComponent]
+    [RequireComponent(typeof(MeshRenderer))]
     public class TextureDebugger : MonoBehaviour {
 
         public enum TextureToDebug {

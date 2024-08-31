@@ -24,9 +24,12 @@ void CalculateFourierSignals(uint3 id : SV_DispatchThreadID)
 	complex h = complex_add(complex_mul(_H0[id.xy].xy, exponent), complex_mul(_H0[id.xy].zw, complex_conj(exponent)));
 	complex ih = float2(-h.y, h.x);
 	
+	// = sum -i * (k / |k|) * h (exp(ik dot x) non è necessario dato che
+	// faccio campionamento stocastico di uno spettro)
 	complex displacementX = ih * wave.x * kLenRcp;
-	complex displacementY = h;
 	complex displacementZ = ih * wave.y * kLenRcp;
+	// = sum h 
+	complex displacementY = h;
 
 	complex displacementX_dx = -h * wave.x * wave.x * kLenRcp;
 	complex displacementY_dx = ih * wave.x;

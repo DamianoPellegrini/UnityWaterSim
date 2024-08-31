@@ -1,0 +1,157 @@
+static const float PI = 3.141592653589793;
+
+#pragma kernel ApplyMaps
+#pragma kernel CalculateFourierSignals
+// #pragma kernel EvolveFourierSpectrum
+// #pragma kernel GenerateHorizFlowMap
+// #pragma kernel SemiLagrangianAdvection
+
+#include "Assets/ShaderLibrary/complex.hlsl"
+
+Texture2D<float> _InjectHeightMap;  // Texture with height inputs such as boats
+                                    // and other floating objects that displace water
+Texture2D<float> _ObstacleMap;  // Contains obstacles present in the grid
+                                // aka non-moving objects that intersect the water surface
+                                // 1 means non-obstructed, 0 means obstructed
+
+RWTexture2D<complex> _HDynamicField;
+RWTexture2D<complex> _PhiDynamicField;
+
+[numthreads(8, 8, 1)]
+void ApplyMaps(uint3 id : SV_DispatchThreadID) {
+
+    // From Tessendorf's paper iWave simulation
+    // For this purpose, an object in the water is described as a grid of mask
+    // values, zero meaning the object is present, 1 if the object is not
+    // present, and along the edges of the object values between 0 and 1 are
+    // useful as an antialiasing. Applying this mask to the wave height grid,
+    // the waves are effectively removed at grid points that the object is
+    // located at. With just this simple procedure, waves that are incident on
+    // the object reflect off of it in a realistic way.
+
+    // _HDynamicField[id.xy] += -complex(_InjectHeightMap[id.xy], 0.0);
+    _HDynamicField[id.xy] += complex(_InjectHeightMap[id.xy], 0.0);
+
+    // _HDynamicField[id.xy] *= _ObstacleMap[id.xy];
+
+    // _InjectHeightMap[id.xy] = 0;
+
+}
+
+float _Time;
+float _DeltaTime;
+float _GravityAcceleration;
+
+// Ambient aka static waves spectrum
+Texture2D<float4> _WavesData;
+Texture2D<complex2> _H0;
+
+// Dynamic waves
+RWTexture2D<complex> _HDynamicSpectrum;
+RWTexture2D<complex> _PhiDynamicSpectrum;
+
+// Fourier signals
+RWTexture2D<complex> _Dx_Dz;
+RWTexture2D<complex> _Dy_Dxz;
+RWTexture2D<complex> _Dyx_Dyz;
+RWTexture2D<complex> _Dxx_Dzz;
+
+[numthreads(8,8,1)]
+void CalculateFourierSignals(uint3 id : SV_DispatchThreadID)
+{
+    float2 wave = _WavesData[id.xy].xz;
+    float kLenRcp = _WavesData[id.xy].y;
+    float omega = _WavesData[id.xy].w;
+
+    // Calcola la fase temporale
+    float phase = omega * _Time;
+    complex exponent = complex_euler(phase);
+
+    // Onde iniziali (statiche)
+    complex h0 = complex_mul(_H0[id.xy].xy, exponent);
+    complex h0_conj = complex_mul(_H0[id.xy].zw, complex_conj(exponent));
+    complex h_static = complex_add(h0, h0_conj);
+
+    // Implementazione delle onde dinamiche secondo Tessendorf
+    float dt = _DeltaTime;  // intervallo temporale (delta t)
+    float kLen = length(wave);
+    float omegaRCP = rcp(omega); // 1 / omega
+    complex h_dynamic = _HDynamicSpectrum[id.xy];  // Valore precedente di h dinamico
+    complex phi_dynamic = _PhiDynamicSpectrum[id.xy];  // Valore precedente del potenziale
+    float cosOmegaDT = cos(omega * dt);
+    float sinOmegaDT = sin(omega * dt);
+
+    // Aggiorna le onde dinamiche (equazioni di Tessendorf)
+    complex h_dynamic_new = cosOmegaDT * h_dynamic + kLen * omegaRCP * sinOmegaDT * phi_dynamic;
+    complex phi_dynamic_new = cosOmegaDT * phi_dynamic - _GravityAcceleration * omegaRCP * sinOmegaDT * h_dynamic;
+
+    // Salva i nuovi valori per l'uso nel prossimo passo temporale
+    _HDynamicSpectrum[id.xy] = h_dynamic_new;
+    _PhiDynamicSpectrum[id.xy] = phi_dynamic_new;
+
+    // Combina onde statiche e dinamiche
+    // complex h = complex_add(h_static, h_dynamic_new);
+    complex h = h_dynamic_new;
+    complex ih = float2(-h.y, h.x);
+    
+    // = somma -i * (k / |k|) * h
+    complex displacementX = ih * wave.x * kLenRcp;
+    complex displacementZ = ih * wave.y * kLenRcp;
+    // = somma h 
+    complex displacementY = h;
+
+    complex displacementX_dx = -h * wave.x * wave.x * kLenRcp;
+    complex displacementY_dx = ih * wave.x;
+    complex displacementZ_dx = -h * wave.x * wave.y * kLenRcp;
+
+    complex displacementY_dz = ih * wave.y;
+    complex displacementZ_dz = -h * wave.y * wave.y * kLenRcp;
+    
+    _Dx_Dz[id.xy] = complex(displacementX.x - displacementZ.y, displacementX.y + displacementZ.x);
+    _Dy_Dxz[id.xy] = complex(displacementY.x - displacementZ_dx.y, displacementY.y + displacementZ_dx.x);
+    _Dyx_Dyz[id.xy] = complex(displacementY_dx.x - displacementY_dz.y, displacementY_dx.y + displacementY_dz.x);
+    _Dxx_Dzz[id.xy] = complex(displacementX_dx.x - displacementZ_dz.y, displacementX_dx.y + displacementZ_dz.x);
+}
+
+// RWTexture2D<float2> _FlowMap;
+
+// [numthreads(8, 8, 1)]
+// void GenerateHorizFlowMap(uint3 id : SV_DISPATCHTHREADID) {
+//     _FlowMap[id.xy] = float2(1.0f, 0.0f);
+// }
+
+// float2 SLAdv(uint2 pos, float2 v, float dt, RWTexture2D<float2> value) {
+//     uint2 prevIdx = pos.xy - v * dt;
+    
+//     prevIdx = clamp(prevIdx, 0, _Size);
+    
+//     uint2 floored = floor(prevIdx);
+//     float2 fracts = frac(prevIdx);
+//     uint2 upperFloor = clamp(floored + 1, 0, _Size);
+
+//     float2 xUp = lerp(value[uint2(upperFloor.x, upperFloor.y)], value[uint2(upperFloor.x, floored.y)], fracts.x);
+//     float2 xDown = lerp(value[uint2(floored.x, upperFloor.y)], value[uint2(floored.x, floored.y)], fracts.x);
+//     return lerp(xUp, xDown, fracts.y);
+// }
+
+// [numthreads(8, 8, 1)]
+// void SemiLagrangianAdvection(uint3 id : SV_DISPATCHTHREADID) {
+//     // _ComplexH[id.xy] = SLAdv(id.xy, _FlowMap[id.xy], _DeltaTime, _ComplexH);
+//     // _ComplexV[id.xy] = SLAdv(id.xy, _FlowMap[id.xy], _DeltaTime, _ComplexV);
+
+//     uint2 prevIdx = id.xy - _FlowMap[id.xy] * _DeltaTime;
+    
+//     prevIdx = clamp(prevIdx, 0, _Size);
+    
+//     uint2 floored = floor(prevIdx);
+//     float2 fracts = frac(prevIdx);
+//     uint2 upperFloor = clamp(floored + 1, 0, _Size);
+
+//     float2 xUp = lerp(_ComplexH[uint2(upperFloor.x, upperFloor.y)], _ComplexH[uint2(upperFloor.x, floored.y)], fracts.x);
+//     float2 xDown = lerp(_ComplexH[uint2(floored.x, upperFloor.y)], _ComplexH[uint2(floored.x, floored.y)], fracts.x);
+//     _ComplexH[id.xy] = lerp(xUp, xDown, fracts.y);
+
+//     xUp = lerp(_ComplexV[uint2(upperFloor.x, upperFloor.y)], _ComplexV[uint2(upperFloor.x, floored.y)], fracts.x);
+//     xDown = lerp(_ComplexV[uint2(floored.x, upperFloor.y)], _ComplexV[uint2(floored.x, floored.y)], fracts.x);
+//     _ComplexV[id.xy] = lerp(xUp, xDown, fracts.y);
+// }

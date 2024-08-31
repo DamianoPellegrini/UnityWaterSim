@@ -36,15 +36,16 @@ void HorizontalStepFFT(uint3 id : SV_DispatchThreadID)
 {
 	float4 data = _ButterflyTexture[uint2(_Step, id.x)];
 	uint2 inputsIndices = (uint2)data.ba;
+	complex twiddle = data.rg;
 	if (_PingPong)
 	{
 		_Buffer1[id.xy] = _Buffer0[uint2(inputsIndices.x, id.y)]
-			+ complex_mul(data.rg, _Buffer0[uint2(inputsIndices.y, id.y)]);
+			+ complex_mul(twiddle, _Buffer0[uint2(inputsIndices.y, id.y)]);
 	}
 	else
 	{
 		_Buffer0[id.xy] = _Buffer1[uint2(inputsIndices.x, id.y)]
-			+ complex_mul(data.rg, _Buffer1[uint2(inputsIndices.y, id.y)]);
+			+ complex_mul(twiddle, _Buffer1[uint2(inputsIndices.y, id.y)]);
 	}
 }
 
@@ -53,15 +54,16 @@ void VerticalStepFFT(uint3 id : SV_DispatchThreadID)
 {
 	float4 data = _ButterflyTexture[uint2(_Step, id.y)];
 	uint2 inputsIndices = (uint2)data.ba;
+	complex twiddle = data.rg;
 	if (_PingPong)
 	{
 		_Buffer1[id.xy] = _Buffer0[uint2(id.x, inputsIndices.x)]
-			+ complex_mul(data.rg, _Buffer0[uint2(id.x, inputsIndices.y)]);
+			+ complex_mul(twiddle, _Buffer0[uint2(id.x, inputsIndices.y)]);
 	}
 	else
 	{
 		_Buffer0[id.xy] = _Buffer1[uint2(id.x, inputsIndices.x)]
-			+ complex_mul(data.rg, _Buffer1[uint2(id.x, inputsIndices.y)]);
+			+ complex_mul(twiddle, _Buffer1[uint2(id.x, inputsIndices.y)]);
 	}
 }
 
@@ -70,15 +72,16 @@ void HorizontalStepInverseFFT(uint3 id : SV_DispatchThreadID)
 {
 	float4 data = _ButterflyTexture[uint2(_Step, id.x)];
 	uint2 inputsIndices = (uint2)data.ba;
+	complex invTwiddle = complex_conj(data.rg);
 	if (_PingPong)
 	{
 		_Buffer1[id.xy] = _Buffer0[uint2(inputsIndices.x, id.y)]
-			+ complex_mul(complex_conj(data.rg), _Buffer0[uint2(inputsIndices.y, id.y)]);
+			+ complex_mul(invTwiddle, _Buffer0[uint2(inputsIndices.y, id.y)]);
 	}
 	else
 	{
 		_Buffer0[id.xy] = _Buffer1[uint2(inputsIndices.x, id.y)]
-			+ complex_mul(complex_conj(data.rg), _Buffer1[uint2(inputsIndices.y, id.y)]);
+			+ complex_mul(invTwiddle, _Buffer1[uint2(inputsIndices.y, id.y)]);
 	}
 }
 
@@ -87,15 +90,16 @@ void VerticalStepInverseFFT(uint3 id : SV_DispatchThreadID)
 {
 	float4 data = _ButterflyTexture[uint2(_Step, id.y)];
 	uint2 inputsIndices = (uint2)data.ba;
+	complex invTwiddle = complex_conj(data.rg);
 	if (_PingPong)
 	{
 		_Buffer1[id.xy] = _Buffer0[uint2(id.x, inputsIndices.x)]
-			+ complex_mul(complex_conj(data.rg), _Buffer0[uint2(id.x, inputsIndices.y)]);
+			+ complex_mul(invTwiddle, _Buffer0[uint2(id.x, inputsIndices.y)]);
 	}
 	else
 	{
 		_Buffer0[id.xy] = _Buffer1[uint2(id.x, inputsIndices.x)]
-			+ complex_mul(complex_conj(data.rg), _Buffer1[uint2(id.x, inputsIndices.y)]);
+			+ complex_mul(invTwiddle, _Buffer1[uint2(id.x, inputsIndices.y)]);
 	}
 }
 

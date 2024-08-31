@@ -10,26 +10,26 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8ff44c27873c542cab54d10d7efef00b, type: 3}
-  m_Name: New JONSWAP Spectrum settings
+  m_Name: CalmHarbor
   m_EditorClassIdentifier: 
   g: 9.81
-  depth: 500
-  lambda: 0.7
+  depth: 1.2
+  lambda: 1
   localBand:
     scale: 1
-    windSpeed: 0.2
-    windDirection: 160
+    windSpeed: 1
+    windDirection: 90
     fetch: 100000
     spreadBlend: 1
-    swell: 0.1
-    shortWavesFade: 0.1
+    swell: 0.01
+    shortWavesFade: 0.01
     peakEnhancement: 3.3
   swellBand:
     scale: 0
-    windSpeed: 1
-    windDirection: 0
+    windSpeed: 10
+    windDirection: 50
     fetch: 400000
     spreadBlend: 1
     swell: 1
-    shortWavesFade: 0.05
+    shortWavesFade: 0.01
     peakEnhancement: 3.3

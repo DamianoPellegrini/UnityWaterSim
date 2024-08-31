@@ -24,19 +24,23 @@
 
 ## 05/08
 
-- 
+- Multiple spectrums simuoation now working
+- Basic buoyancy simulation
+- harbor scene
+
+## 19/08
+
+- Wakes surface simulation using eWave and compute shaders
 
 ## TODOs
 
-- For scattering term change wave height to linear eye depth value
-- Basic buoyancy simulation
-- Better foam using perlin noise or foam tex or foam accum
-- Foam around semi submerged object using depth and surface height
 - Underwater rendering
-- harbor scene
+- Better foam using perlin noise or foam tex or foam accum
+- Foam around semi submerged object using depth and surface height (custom pass to get AO?)
 - isle scene
-- stranded raft scene
-- flying plane over water scene?
+- Better buoyancy simulation (using plane fitting or voxel approx. or atlas multisample approach)
+- stranded raft scene (aka buoyancy scene)
+- flying airplane over water scene?
 - Exporting some data for training NN
 - Lighting ShaderLib for use both in gerstner and tessendorf
 - Shoreline interaction that lerp using distance from shore a gerstner + sawtooth (wave + foam) simulation

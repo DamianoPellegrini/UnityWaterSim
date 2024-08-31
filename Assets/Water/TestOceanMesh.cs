@@ -2,9 +2,10 @@
 using UnityEngine;
 using Water;
 
+[RequireComponent(typeof(WaterSurface))]
 public class TestOceanMesh : MonoBehaviour
 {
-    public WaterSurface waterSurface;
+    private WaterSurface waterSurface;
     public Transform viewer;
     public Material oceanMaterial;
     public bool updateMaterialProperties;
@@ -27,6 +28,10 @@ public class TestOceanMesh : MonoBehaviour
     float previousSkirtSize;
 
     Material[] materials;
+
+    private void Awake() {
+        waterSurface = GetComponent<WaterSurface>();
+    }
 
     private void Start()
     {
