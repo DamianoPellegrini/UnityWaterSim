@@ -17,15 +17,15 @@ MonoBehaviour:
   lambda: 0.7
   localBand:
     scale: 1
-    windSpeed: 0.2
+    windSpeed: 0.3
     windDirection: 160
     fetch: 100000
     spreadBlend: 1
     swell: 0.1
-    shortWavesFade: 0.1
+    shortWavesFade: 0.05
     peakEnhancement: 3.3
   swellBand:
-    scale: 0
+    scale: 1
     windSpeed: 1
     windDirection: 0
     fetch: 400000

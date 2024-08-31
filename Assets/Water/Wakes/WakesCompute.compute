@@ -29,8 +29,8 @@ void ApplyMaps(uint3 id : SV_DispatchThreadID) {
     // located at. With just this simple procedure, waves that are incident on
     // the object reflect off of it in a realistic way.
 
-    // _HDynamicField[id.xy] += -complex(_InjectHeightMap[id.xy], 0.0);
-    _HDynamicField[id.xy] += complex(_InjectHeightMap[id.xy], 0.0);
+    // The object lowers the surface
+    _HDynamicField[id.xy] += -complex(_InjectHeightMap[id.xy], 0.0);
 
     // _HDynamicField[id.xy] *= _ObstacleMap[id.xy];
 
@@ -82,16 +82,16 @@ void CalculateFourierSignals(uint3 id : SV_DispatchThreadID)
     float sinOmegaDT = sin(omega * dt);
 
     // Aggiorna le onde dinamiche (equazioni di Tessendorf)
-    complex h_dynamic_new = cosOmegaDT * h_dynamic + kLen * omegaRCP * sinOmegaDT * phi_dynamic;
-    complex phi_dynamic_new = cosOmegaDT * phi_dynamic - _GravityAcceleration * omegaRCP * sinOmegaDT * h_dynamic;
+    complex h_dynamic_new = complex_add(cosOmegaDT * h_dynamic, kLen * omegaRCP * sinOmegaDT * phi_dynamic);
+    complex phi_dynamic_new = complex_add(cosOmegaDT * phi_dynamic , -_GravityAcceleration * omegaRCP * sinOmegaDT * h_dynamic);
 
     // Salva i nuovi valori per l'uso nel prossimo passo temporale
     _HDynamicSpectrum[id.xy] = h_dynamic_new;
     _PhiDynamicSpectrum[id.xy] = phi_dynamic_new;
 
     // Combina onde statiche e dinamiche
-    // complex h = complex_add(h_static, h_dynamic_new);
-    complex h = h_dynamic_new;
+    complex h = complex_add(h_static, h_dynamic_new);
+    // complex h = h_static;
     complex ih = float2(-h.y, h.x);
     
     // = somma -i * (k / |k|) * h

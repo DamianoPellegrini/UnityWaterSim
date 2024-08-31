@@ -6,14 +6,12 @@ namespace Water.Wakes
 {
     public class WakeCascade : IDisposable
     {
-        public SpectrumCascade cascade;
-
         public RenderTexture heightSpectrum;
         public RenderTexture potentialSpectrum;
         public RenderTexture heightField;
         public RenderTexture potentialField;
 
-        public WakeCascade(string name, int size, SpectrumCascade cascade)
+        public WakeCascade(string name, int size)
         {
             heightSpectrum = WaterSimulationSettings.CreateRenderTexture($"{name}_{nameof(heightSpectrum)}", size, RenderTextureFormat.RGFloat, false);
             potentialSpectrum = WaterSimulationSettings.CreateRenderTexture($"{name}_{nameof(potentialSpectrum)}", size, RenderTextureFormat.RGFloat, false);

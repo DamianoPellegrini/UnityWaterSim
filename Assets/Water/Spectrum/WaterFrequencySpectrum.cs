@@ -1,4 +1,5 @@
 using System;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -13,12 +14,19 @@ namespace Water.Spectrum
         /// <param name="cascade">Cascade to write information to.</param>
         public abstract void SampleSpectrum(SpectrumCascade cascade);
 
+        /// <summary>
+        /// Linearly interpolates between two spectrums.
+        /// </summary>
+        /// <param name="start">The source spectrum.</param>
+        /// <param name="end">The destination spectrum.</param>
+        /// <param name="time">The interpolation parameter.</param>
+        /// <returns>The interpolated result spectrum.</returns>
+        public abstract WaterFrequencySpectrum Lerp(WaterFrequencySpectrum end, float time);
+
         public float g = 9.81f;
         public float depth = 500f;
         [Range(0, 1)]
         public float lambda = 1;
-
-        Texture2D noise;
 
         protected WaterSimulationSettings settings;
         ComputeShader initialSpectrumShader;

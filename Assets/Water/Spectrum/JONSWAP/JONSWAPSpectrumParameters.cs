@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 namespace Water.Spectrum
@@ -65,6 +66,21 @@ namespace Water.Spectrum
         private float JonswapPeakFrequency(float g, float fetch, float windSpeed)
         {
             return 22 * Mathf.Pow(windSpeed * fetch / g / g, -0.33f);
+        }
+
+        public static JONSWAPSpectrumBand Lerp(JONSWAPSpectrumBand start, JONSWAPSpectrumBand end, float time)
+        {
+            return new JONSWAPSpectrumBand()
+            {
+                scale = math.lerp(start.scale, end.scale, time),
+                windSpeed = math.lerp(start.windSpeed, end.windSpeed, time),
+                windDirection = math.lerp(start.windDirection, end.windDirection, time),
+                fetch = math.lerp(start.fetch, end.fetch, time),
+                spreadBlend = math.lerp(start.spreadBlend, end.spreadBlend, time),
+                swell = math.lerp(start.swell, end.swell, time),
+                shortWavesFade = math.lerp(start.shortWavesFade, end.shortWavesFade, time),
+                peakEnhancement = math.lerp(start.peakEnhancement, end.peakEnhancement, time),
+            };
         }
     }
 }

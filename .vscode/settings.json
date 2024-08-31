@@ -45,7 +45,7 @@
         "**/*.unity": true,
         "build/": true,
         "Build/": true,
-        "Library/": true,
+        "Library/": false,
         "library/": true,
         "obj/": true,
         "Obj/": true,

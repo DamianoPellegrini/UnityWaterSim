@@ -1,3 +1,5 @@
+using NUnit.Framework.Constraints;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Water.Spectrum
@@ -48,6 +50,38 @@ namespace Water.Spectrum
             sampleSpectrumShader.SetInt(SIZE_PROP, size);
 
             sampleSpectrumShader.Dispatch(KERNEL_SAMPLE, size / 8, size / 8, 1);
+        }
+
+        public override WaterFrequencySpectrum Lerp(WaterFrequencySpectrum end, float time)
+        {
+            if (time < 0) return this;
+            if (time > 1) return end;
+
+            if (end is PhillipsSpectrumSettings endPhil)
+            {
+                return new PhillipsSpectrumSettings()
+                {
+                    depth = math.lerp(this.depth, end.depth, time),
+                    g = math.lerp(this.g, end.g, time),
+                    lambda = math.lerp(this.lambda, end.lambda, time),
+
+                    alpha = math.lerp(this.alpha, endPhil.alpha, time),
+                    windSpeed = math.lerp(this.windSpeed, endPhil.windSpeed, time),
+                    windDirection = math.lerp(this.windDirection, endPhil.windDirection, time),
+                    suppressThreshold = math.lerp(this.suppressThreshold, endPhil.suppressThreshold, time),
+                };
+            } else {
+                return new PhillipsSpectrumSettings()
+                {
+                    depth = math.lerp(this.depth, end.depth, time),
+                    g = math.lerp(this.g, end.g, time),
+                    lambda = math.lerp(this.lambda, end.lambda, time),
+                    alpha = alpha,
+                    windSpeed = windSpeed,
+                    windDirection = windDirection,
+                    suppressThreshold = suppressThreshold,
+                };
+            }
         }
 
         // Spectrum

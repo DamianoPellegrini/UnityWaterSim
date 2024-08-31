@@ -1,3 +1,4 @@
+using Unity.Mathematics;
 using UnityEditor.Recorder.Input;
 using UnityEngine;
 
@@ -34,7 +35,8 @@ namespace Water.Spectrum
             shortWavesFade = 0.01f
         };
 
-        public override void OnEnable() {
+        public override void OnEnable()
+        {
             unsafe { spectrumBuffer = new ComputeBuffer(2, sizeof(JONSWAPSpectrumParameters)); }
 
             base.OnEnable();
@@ -79,6 +81,37 @@ namespace Water.Spectrum
             sampleSpectrumShader.SetInt(SIZE_PROP, size);
 
             sampleSpectrumShader.Dispatch(KERNEL_SAMPLE, size / 8, size / 8, 1);
+        }
+
+        public override WaterFrequencySpectrum Lerp(WaterFrequencySpectrum end, float time)
+        {
+            if (time < 0) return this;
+            if (time > 1) return end;
+
+            if (end is JONSWAPSpectrumSettings endPhil)
+            {
+                return new JONSWAPSpectrumSettings()
+                {
+                    depth = math.lerp(this.depth, end.depth, time),
+                    g = math.lerp(this.g, end.g, time),
+                    lambda = math.lerp(this.lambda, end.lambda, time),
+
+                    localBand = JONSWAPSpectrumBand.Lerp(this.localBand, endPhil.localBand, time),
+                    swellBand = JONSWAPSpectrumBand.Lerp(this.swellBand, endPhil.swellBand, time),
+                };
+            }
+            else
+            {
+                return new JONSWAPSpectrumSettings()
+                {
+                    depth = math.lerp(this.depth, end.depth, time),
+                    g = math.lerp(this.g, end.g, time),
+                    lambda = math.lerp(this.lambda, end.lambda, time),
+
+                    localBand = localBand,
+                    swellBand = swellBand,
+                };
+            }
         }
 
         // Spectrum

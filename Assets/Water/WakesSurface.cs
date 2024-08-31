@@ -29,7 +29,7 @@ namespace Water
             }
 
             cascade0 = new SpectrumCascade($"{name}_{nameof(cascade0)}", (int)settings.renderingPatchSize, 250, 0.0001f, 9999.0f);
-            wakeCascade0 = new WakeCascade($"{name}_{nameof(wakeCascade0)}", (int)settings.renderingPatchSize, cascade0);
+            wakeCascade0 = new WakeCascade($"{name}_{nameof(wakeCascade0)}", (int)settings.renderingPatchSize);
             renderingFFT = new FastFourierTransform((int)settings.renderingPatchSize, settings.FFTShader);
         }
 
@@ -74,8 +74,9 @@ namespace Water
             wakesShader.SetTexture(0, "_HDynamicField", wakeCascade0.heightField);
             wakesShader.Dispatch(0, (int)waterSimSettings.renderingPatchSize / 8, (int)waterSimSettings.renderingPatchSize / 8, 1);
 
+            // TODO: Apparently FFTs are broken
             // Takes the fields to fourier space
-            renderingFFT.FFT2D(wakeCascade0.heightField, wakeCascade0.heightSpectrum, false);
+            renderingFFT.FFT2D(wakeCascade0.heightField, wakeCascade0.heightSpectrum, true);
             renderingFFT.FFT2D(wakeCascade0.potentialField, wakeCascade0.potentialSpectrum, true);
 
             // Evolve frequency dynamics
@@ -96,8 +97,8 @@ namespace Water
             wakesShader.Dispatch(1, (int)waterSimSettings.renderingPatchSize / 8, (int)waterSimSettings.renderingPatchSize / 8, 1);
 
             // Takes the fields back out of fourier space
-            // renderingFFT.IFFT2D(wakeCascade0.heightSpectrum, wakeCascade0.heightField, false, false, false);
-            // renderingFFT.IFFT2D(wakeCascade0.potentialSpectrum, wakeCascade0.potentialField, false, false, false);
+            renderingFFT.IFFT2D(wakeCascade0.heightSpectrum, wakeCascade0.heightField, false, false, false);
+            renderingFFT.IFFT2D(wakeCascade0.potentialSpectrum, wakeCascade0.potentialField, false, false, false);
 
             // Tranform to time domain
             spectrum.CalculateDisplacement(cascade0, renderingFFT, Time.deltaTime);

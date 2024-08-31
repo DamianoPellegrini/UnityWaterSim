@@ -24,7 +24,8 @@ Material:
   m_Shader: {fileID: 4800000, guid: f4774e6633fc0400599e671737eb4eb9, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
+  m_ValidKeywords:
+  - _DEBUG_OFF
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -142,6 +143,7 @@ Material:
     - _ClearCoatSmoothness: 0
     - _Cull: 2
     - _Cutoff: 0.5
+    - _Debug: 0
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
@@ -149,7 +151,7 @@ Material:
     - _EnvironmentLightStrength: 1
     - _EnvironmentReflections: 1
     - _FoamBiasLOD0: 0.74
-    - _FoamBiasLOD1: 1.68
+    - _FoamBiasLOD1: 1.57
     - _FoamBiasLOD2: 2.4
     - _FoamScale: 1
     - _FogDensity: 2
@@ -163,17 +165,17 @@ Material:
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _RefractionStrength: 3
+    - _RefractionStrength: 2
     - _Roughness: 0.3
     - _ScatterShadowStrength: 0.15
-    - _ScatterStrength: 0.177
+    - _ScatterStrength: 0.096
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _Surface: 0
-    - _WavePeakScatterStrength: 0.199
+    - _WavePeakScatterStrength: 1
     - _WorkflowMode: 1
     - _ZWrite: 1
     m_Colors:

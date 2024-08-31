@@ -5917,7 +5917,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   viewer: {fileID: 2022995481}
   oceanMaterial: {fileID: 2100000, guid: f7be1e5ffd30b47f78459617c7afb565, type: 2}
-  updateMaterialProperties: 0
+  updateMaterialProperties: 1
   showMaterialLods: 0
   lengthScale: 10
   vertexDensity: 30
@@ -13393,6 +13393,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 5c57fa8b1b3ac445b9b00c8319a9fda7, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1643894892}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 5c57fa8b1b3ac445b9b00c8319a9fda7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1643894895}
   m_SourcePrefab: {fileID: 100100000, guid: 5c57fa8b1b3ac445b9b00c8319a9fda7, type: 3}
 --- !u!1001 &1106434909
 PrefabInstance:
@@ -19822,6 +19825,18 @@ SpringJoint:
   m_EnablePreprocessing: 1
   m_MassScale: 1
   m_ConnectedMassScale: 1
+--- !u!114 &1643894895
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1643894883}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d5ac9593b59d4847815e4528b52a6d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1647061349
 GameObject:
   m_ObjectHideFlags: 0

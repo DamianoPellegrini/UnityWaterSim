@@ -1,5 +1,8 @@
 ﻿using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using Water;
 
 [RequireComponent(typeof(WaterSurface))]
@@ -29,7 +32,11 @@ public class TestOceanMesh : MonoBehaviour
 
     Material[] materials;
 
-    private void Awake() {
+    Camera _depthCam;
+    RenderTexture _depthTex;
+
+    private void Awake()
+    {
         waterSurface = GetComponent<WaterSurface>();
     }
 
@@ -37,6 +44,8 @@ public class TestOceanMesh : MonoBehaviour
     {
         if (viewer == null)
             viewer = Camera.main.transform;
+
+        CaptureDepthMap();
 
         oceanMaterial.SetTexture("_Displacement_c0", waterSurface.cascade0.displacement);
         oceanMaterial.SetTexture("_Derivatives_c0", waterSurface.cascade0.derivatives);
@@ -242,7 +251,7 @@ public class TestOceanMesh : MonoBehaviour
         go.transform.SetParent(transform);
         go.transform.localPosition = Vector3.zero;
         MeshFilter meshFilter = go.AddComponent<MeshFilter>();
-        meshFilter.mesh = mesh;  
+        meshFilter.mesh = mesh;
         MeshRenderer meshRenderer = go.AddComponent<MeshRenderer>();
         meshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         meshRenderer.receiveShadows = true;
@@ -398,6 +407,68 @@ public class TestOceanMesh : MonoBehaviour
         mesh.triangles = triangles;
         mesh.normals = normals;
         return mesh;
+    }
+
+    private void CaptureDepthMap()
+    {
+        //Generate the camera
+        if (_depthCam == null)
+        {
+            var go =
+                new GameObject("WaterDepthCamera") { hideFlags = HideFlags.DontSave }; //create the cameraObject
+            _depthCam = go.AddComponent<Camera>();
+        }
+
+        var additionalCamData = _depthCam.GetUniversalAdditionalCameraData();
+        additionalCamData.renderShadows = false;
+        additionalCamData.requiresColorOption = CameraOverrideOption.Off;
+        additionalCamData.requiresDepthOption = CameraOverrideOption.Off;
+
+        var t = _depthCam.transform;
+        var depthExtra = 4.0f;
+        t.position = Vector3.up * (transform.position.y + depthExtra);//center the camera on this water plane height
+        t.up = Vector3.forward;//face the camera down
+
+        _depthCam.enabled = true;
+        _depthCam.orthographic = true;
+        _depthCam.orthographicSize = 256;//hardcoded = 1k area - TODO
+        _depthCam.nearClipPlane = 0.01f;
+        _depthCam.farClipPlane = 20 /*MaxDepth*/ + depthExtra;
+        _depthCam.allowHDR = false;
+        _depthCam.allowMSAA = false;
+        _depthCam.cullingMask = 1 << 10;
+        //Generate RT
+        if (!_depthTex)
+            _depthTex = new RenderTexture(1024, 1024, 24, RenderTextureFormat.Depth, RenderTextureReadWrite.Linear);
+        if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.OpenGLES3)
+        {
+            _depthTex.filterMode = FilterMode.Point;
+        }
+        _depthTex.wrapMode = TextureWrapMode.Clamp;
+        _depthTex.name = "WaterDepthMap";
+        //do depth capture
+        _depthCam.targetTexture = _depthTex;
+        _depthCam.Render();
+
+        oceanMaterial.SetTexture("_WaterDepthMap", _depthTex);
+        // set depth bufferParams for depth cam(since it doesnt exist and only temporary)
+        var _params = new Vector4(t.position.y, 256, 0, 0);
+        //Vector4 zParams = new Vector4(1-f/n, f/n, (1-f/n)/f, (f/n)/f);//2015
+        oceanMaterial.SetVector("_WaterZBufferParams", _params);
+
+#if UNITY_EDITOR
+        Texture2D tex2D = new Texture2D(1024, 1024, TextureFormat.Alpha8, false);
+        Graphics.CopyTexture(_depthTex, tex2D);
+        // byte[] image = tex2D.EncodeToPNG();
+        // System.IO.File.WriteAllBytes(Application.dataPath + "/WaterDepth.png", image);
+        if (AssetDatabase.FindAssets("Assets/Depth.asset").Length == 0)
+            AssetDatabase.CreateAsset(tex2D, "Assets/Depth.asset");
+        else
+            AssetDatabase.SaveAssetIfDirty(tex2D);
+#endif
+
+        _depthCam.enabled = false;
+        _depthCam.targetTexture = null;
     }
 
     class Element
