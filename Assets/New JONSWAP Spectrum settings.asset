@@ -26,10 +26,10 @@ MonoBehaviour:
     peakEnhancement: 3.3
   swellBand:
     scale: 1
-    windSpeed: 1
+    windSpeed: 14.63
     windDirection: 0
     fetch: 400000
     spreadBlend: 1
     swell: 1
-    shortWavesFade: 0.05
+    shortWavesFade: 0.02
     peakEnhancement: 3.3

@@ -46,9 +46,10 @@
 ## 10/09
 
 - Fixed depth fog
-- isle scene
 - galleon scene (aka buoyancy scene)
 
+- isle scene
+- NN ML Analysis
 
 ## TODOs
 

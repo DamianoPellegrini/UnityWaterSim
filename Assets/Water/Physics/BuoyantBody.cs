@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
+using Water.Spectrum;
 
 namespace Water.Physics
 {
@@ -56,9 +57,10 @@ namespace Water.Physics
         }
 
         [Header("Debug")]
-        [SerializeField] private bool showVoxels;
-        [SerializeField] private bool showVoxelsBounds;
-        [SerializeField] private bool showForces;
+        [SerializeField] private bool showVoxels = false;
+        [SerializeField] private bool showVoxelsBounds = true;
+        [SerializeField] private bool showVoxelsDisplacements = false;
+        [SerializeField] private bool showForces = true;
 
         struct DebugDrawing
         {
@@ -111,11 +113,42 @@ namespace Water.Physics
             Jobs.LocalToWorldJob.CompleteJob(guid);
             var submergedAmount = 0f;
 
+
+            var spectrum = displacementSource.GetLerpedSpectrum();
+            var windVector = new Vector2(0, 0);
+            var windSpeed = 0.0f;
+            if (spectrum is JONSWAPSpectrum jonswap)
+            {
+                // 0 -x cos(0) = 1 sin(0) = 0
+                // 90 -z cos(90) = 0
+                var localWind = new Vector2(
+                    Mathf.Cos(Mathf.Deg2Rad * jonswap.localBand.windDirection),
+                    Mathf.Sin(Mathf.Deg2Rad * jonswap.localBand.windDirection)
+                ) * jonswap.localBand.scale;
+
+                var swellWind = new Vector2(
+                    Mathf.Cos(Mathf.Deg2Rad * jonswap.swellBand.windDirection),
+                    Mathf.Sin(Mathf.Deg2Rad * jonswap.swellBand.windDirection)
+                ) * jonswap.swellBand.scale;
+
+                windVector = -(localWind + swellWind);
+                var doa = localWind.x * swellWind.x + localWind.y * swellWind.y;
+                windSpeed = doa * jonswap.localBand.windSpeed + jonswap.swellBand.windSpeed;
+            }
+            else if (spectrum is PhillipsSpectrum phillips)
+            {
+                windVector.x = Mathf.Cos(Mathf.Deg2Rad * phillips.windDirection);
+                windVector.y = Mathf.Sin(Mathf.Deg2Rad * phillips.windDirection);
+                windSpeed = phillips.windSpeed;
+            }
+
             // Apply all forces and update once all have been applied
             UnityEngine.Physics.autoSyncTransforms = false;
             for (var i = 0; i < voxels.Length; i++)
             {
-                BuoyancyForce(samplePoints[i], velocity[i], displacementSource.transform.position.y + displacementSource.GetWaterHeight(samplePoints[i]), ref submergedAmount, ref debugInfo[i]);
+                windVector.Normalize();
+                // Debug.Log($"Transform: {samplePoints[i]} <- {voxels[i]}; {displacementSource.GetWaterHeight(samplePoints[i])}");
+                BuoyancyForce(samplePoints[i], velocity[i], displacementSource.transform.position.y + displacementSource.GetWaterHeight(samplePoints[i]), windVector, windSpeed, ref submergedAmount, ref debugInfo[i]);
             }
             UnityEngine.Physics.SyncTransforms();
             UnityEngine.Physics.autoSyncTransforms = true;
@@ -142,9 +175,9 @@ namespace Water.Physics
 
             // Draw voxels
             Gizmos.matrix = matrix;
+            Gizmos.color = Color.yellow;
             if (showVoxels && voxels != null)
             {
-                Gizmos.color = Color.yellow;
 
                 foreach (var p in voxels)
                 {
@@ -157,6 +190,7 @@ namespace Water.Physics
             {
                 Gizmos.DrawWireCube(voxelBounds.center, voxelBounds.size);
                 Vector3 center = voxelBounds.center;
+                Gizmos.DrawSphere(center, 0.2f);
 
                 // Draw bottom grid
                 float y = center.y - voxelBounds.extents.y;
@@ -173,8 +207,11 @@ namespace Water.Physics
             //     voxelBounds = VoxelBounds();
 
             // Draw center of mass
-            Gizmos.color = Color.red;
-            Gizmos.DrawSphere(voxelBounds.center + centerOfMassOffset, 0.2f);
+            if (rb != null)
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawSphere(rb.centerOfMass, 0.2f);
+            }
 
             Gizmos.matrix = Matrix4x4.identity; Gizmos.matrix = Matrix4x4.identity;
 
@@ -182,15 +219,18 @@ namespace Water.Physics
             {
                 foreach (DebugDrawing debug in debugInfo)
                 {
-                    // Draw sample point
-                    Gizmos.color = Color.cyan;
-                    Gizmos.DrawCube(debug.Position, new Vector3(kGizmoSize, kGizmoSize, kGizmoSize));
+                    if (showVoxelsDisplacements)
+                    {
+                        // Draw sample point
+                        // Gizmos.color = Color.cyan;
+                        // Gizmos.DrawCube(debug.Position, new Vector3(kGizmoSize, kGizmoSize, kGizmoSize));
 
-                    // Draw Water height displacement
-                    var water = debug.Position;
-                    water.y = debug.WaterHeight;
-                    Gizmos.DrawLine(debug.Position, water);
-                    Gizmos.DrawSphere(water, kGizmoSize * 2f);
+                        // Draw Water height displacement
+                        var water = debug.Position;
+                        water.y = debug.WaterHeight;
+                        // Gizmos.DrawLine(debug.Position, water);
+                        Gizmos.DrawSphere(water, kGizmoSize * 2f);
+                    }
 
                     // Draw force
                     if (showForces)
@@ -279,7 +319,7 @@ namespace Water.Physics
 
         void SetupPhysics()
         {
-            rb.centerOfMass = centerOfMassOffset + voxelBounds.center;
+            // rb.centerOfMass += centerOfMassOffset;
             baseDrag = rb.linearDamping;
             baseAngularDrag = rb.angularDamping;
 
@@ -288,7 +328,7 @@ namespace Water.Physics
             localArchimedesForce = new float3(0, archimedesForceMagnitude, 0) / voxels.Length;
         }
 
-        void BuoyancyForce(Vector3 position, float3 velocity, float waterHeight, ref float submergedAmount, ref DebugDrawing debug)
+        void BuoyancyForce(Vector3 position, float3 velocity, float waterHeight, Vector2 windVector, float windSpeed, ref float submergedAmount, ref DebugDrawing debug)
         {
             debug.Position = position;
             debug.WaterHeight = waterHeight;
@@ -304,10 +344,11 @@ namespace Water.Physics
 
             var localDampingForce = kDampner * rb.mass * -velocity;
             var force = localDampingForce + math.sqrt(k) * localArchimedesForce;
+            force += new float3(windVector.x, 0, windVector.y) * windSpeed;
             rb.AddForceAtPosition(force, position);
 
             debug.Force = force; // For drawing force Gizmos
-            // Debug.Log(string.Format("Position: {0:f1} -- Force: {1:f2} -- Height: {2:f2}\nVelocity: {3:f2} -- Damp: {4:f2} -- Mass: {5:f1} -- K: {6:f2}", wp, force, waterLevel, velocity, localDampingForce, RB.mass, localArchimedesForce));
+            // Debug.Log(string.Format("Position: {0:f1} -- Force: {1:f2} -- Height: {2:f2}\nVelocity: {3:f2} -- Damp: {4:f2} -- Mass: {5:f1} -- K: {6:f2}", position, force, waterHeight, velocity, localDampingForce, rb.mass, localArchimedesForce));
         }
 
         void UpdateDrag(float submergedAmount)

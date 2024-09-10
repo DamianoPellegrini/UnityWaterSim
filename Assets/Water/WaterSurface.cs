@@ -75,7 +75,7 @@ namespace Water
             Dispose();
         }
 
-        private WaterFrequencySpectrum GetLerpedSpectrum()
+        public WaterFrequencySpectrum GetLerpedSpectrum()
         {
             if (spectrums.Length == 0) return null;
             if (spectrums.Length == 1) return spectrums[0];
@@ -142,7 +142,7 @@ namespace Water
 
             spectrum.SampleSpectrum(cascadePhys);
             spectrum.CalculateInitials(cascadePhys, gaussianNoise);
-            spectrum.Evolve(cascadePhys, Time.fixedTime + Time.fixedDeltaTime * deltaReadbackTime * 2);
+            spectrum.Evolve(cascadePhys, Time.fixedTime + deltaReadbackTime * 2);
             spectrum.CalculateDisplacement(cascadePhys, physicsFFT, Time.fixedDeltaTime);
             RequestReadbacks();
         }
@@ -150,7 +150,7 @@ namespace Water
         void RequestReadbacks()
         {
             if (!float.IsNaN(readbackRequestTime)) return;
-            readbackRequestTime = Time.time;
+            readbackRequestTime = Time.fixedTime;
             AsyncGPUReadback.Request(cascadePhys.displacement, 0, TextureFormat.RGBAFloat, OnCompleteReadback);
             AsyncGPUReadback.Request(cascadePhys.derivatives, 0, TextureFormat.RGBAFloat, request => OnCompleteReadback(request, derivativesReadback));
         }

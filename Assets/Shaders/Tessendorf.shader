@@ -129,7 +129,10 @@ Shader "Universal Render Pipeline/Nature/Water/Tessendorf"
 			#if defined(CLOSE)
 			displacement += tex2Dlod(_Displacement_c2, uvst / _LengthScale2).rgb * lodWeights[2];
 			#endif
-
+			
+			// return tex2Dlod(_Displacement_c0, uvst / _LengthScale0).rgb * lodWeights[0];
+			// return tex2Dlod(_Displacement_c1, uvst / _LengthScale1).rgb * lodWeights[1];
+			// return tex2Dlod(_Displacement_c2, uvst / _LengthScale2).rgb * lodWeights[2];
 			return displacement;
 		}
 
