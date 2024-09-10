@@ -52,6 +52,7 @@ namespace Water.Jobs
 
         public static void ScheduleJob(int guid, Matrix4x4 localToWorld)
         {
+            if (!Data.ContainsKey(guid)) throw new System.Exception($"Job with guid {guid} has not been setup");
             if (Data[guid].Processing)
                 return;
 
@@ -67,8 +68,14 @@ namespace Water.Jobs
             JobHandle.ScheduleBatchedJobs();
         }
 
+        public static bool IsComplete(int guid) {
+            if (!Data.ContainsKey(guid)) return true;
+            return !Data[guid].Processing;
+        }
+
         public static void CompleteJob(int guid)
         {
+            if (!Data.ContainsKey(guid)) return;
             Data[guid].Handle.Complete();
             Data[guid].Processing = false;
         }

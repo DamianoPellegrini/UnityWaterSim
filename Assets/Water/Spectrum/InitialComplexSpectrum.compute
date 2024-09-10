@@ -27,7 +27,7 @@ float FrequencyDerivative(float k, float g, float depth, float omega)
 {
 	float th = tanh(min(k * depth, 20));
 	float ch = cosh(k * depth);
-	return g * (depth * k / ch / ch + th) / omega / 2;
+	return g * (depth * k / (ch * ch) + th) / omega / 2;
 }
 
 [numthreads(8, 8, 1)]
@@ -50,7 +50,9 @@ void CalculateInitialSpectrum(uint3 id : SV_DispatchThreadID)
 		_H0K[id.xy] = _Noise[id.xy]
 			* sqrt(2 * spectrumSample * abs(dOmegadk) / kLength * deltaK * deltaK);
 
-		// TODO: do it in 1 kernel taking -k either by sampling _WavesData and _SpectrumSample with uint2((_Size - id.x) % _Size, (_Size - id.y) % _Size)
+		// TODO: 1 kernel taking -k either by sampling _WavesData and
+		// _SpectrumSample with uint2((_Size - id.x) % _Size, (_Size - id.y) % _Size).
+		// Should be faster to do 4 sampling instead of two dispatch/two kernel.
 		// complex h0K = _Noise[id.xy]
 		// * sqrt(2 * spectrumSample * abs(dOmegadk) / kLength * deltaK * deltaK);
 		// complex h0MinusK = _Noise[uint2((_Size - id.x) % _Size, (_Size - id.y) % _Size)]

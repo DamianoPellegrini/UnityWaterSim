@@ -1,8 +1,8 @@
 ﻿#pragma kernel FillResultTextures
 
-RWTexture2D<float3> _Displacement;
-RWTexture2D<float4> _Derivatives;
-RWTexture2D<float4> _Turbulence;
+RWTexture2D<float3> _Displacement; // x,y,z: surface displacement
+RWTexture2D<float4> _Derivatives; // x,y: Slopes in x and z for vertical displacement, z,w: slopes in x and z for horizontal displacement
+RWTexture2D<float> _Turbulence; // r: turbulent energy
 
 Texture2D<float2> _Dx_Dz;
 Texture2D<float2> _Dy_Dxz;
@@ -24,6 +24,6 @@ void FillResultTextures(uint3 id : SV_DispatchThreadID)
 	_Derivatives[id.xy] = float4(DyxDyz, DxxDzz * _Lambda);
 	float jacobian = (1 + _Lambda * DxxDzz.x) * (1 + _Lambda * DxxDzz.y) - _Lambda * _Lambda * DyDxz.y * DyDxz.y;
 	
-	_Turbulence[id.xy] = _Turbulence[id.xy].r + _DeltaTime * 0.5 / max(jacobian, 0.5);
-	_Turbulence[id.xy] = min(jacobian, _Turbulence[id.xy].r);
+	_Turbulence[id.xy] = _Turbulence[id.xy] + _DeltaTime * 0.5 / max(jacobian, 0.5);
+	_Turbulence[id.xy] = min(jacobian, _Turbulence[id.xy]);
 }

@@ -1,0 +1,8 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <editor:ObjectField name="waterSpectrumField" binding-path="icone" label="Spectrum" allow-scene-objects="false" type="Water.Spectrum.WaterFrequencySpectrum, Assembly-CSharp" />
+    <editor:ObjectField name="gaussianNoiseField" binding-path="icone" label="Gaussian noise" allow-scene-objects="false" type="UnityEngine.Texture, UnityEngine.CoreModule" />
+    <engine:EnumField label="Patch size" value="Low" type="Water.WaterSimulationSettings+PatchSize, Assembly-CSharp" name="patchSizeField" tooltip="Patch to simulate" />
+    <engine:SliderInt label="Nº samples" value="5" high-value="60" name="sampleCountSlider" low-value="1" fill="false" direction="Horizontal" inverted="false" tooltip="How many frames are going to be simulated" show-input-field="true" />
+    <engine:Button text="Generate" name="generateButton" tooltip="Before the generation you will be prompted on where to save the results." />
+    <engine:Label text="Total Entries" name="totalEntriesLabel" tooltip="total entries = patchSize * patchSize * numSamples" selectable="false" focusable="false" enabled="false" />
+</engine:UXML>

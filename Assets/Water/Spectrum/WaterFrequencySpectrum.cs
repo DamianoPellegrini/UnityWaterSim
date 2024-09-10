@@ -10,8 +10,10 @@ namespace Water.Spectrum
     {
         /// <summary>
         /// Used to sample initial wave directions and sample the spectrum using those waves samples.
+        /// 
+        /// This function should be called first.
         /// </summary>
-        /// <param name="cascade">Cascade to write information to.</param>
+        /// <param name="cascade">The cascade to use for calculations</param>
         public abstract void SampleSpectrum(SpectrumCascade cascade);
 
         /// <summary>
@@ -22,6 +24,24 @@ namespace Water.Spectrum
         /// <param name="time">The interpolation parameter.</param>
         /// <returns>The interpolated result spectrum.</returns>
         public abstract WaterFrequencySpectrum Lerp(WaterFrequencySpectrum end, float time);
+
+        /// <summary>
+        /// Get the csv format for this type
+        /// </summary>
+        /// <returns>CSV format without trailing newlines or commas</returns>
+        public virtual string CSVFormat()
+        {
+            return "gravity,depth,lambda";
+        }
+
+        /// <summary>
+        /// Get the csv representation for this type
+        /// </summary>
+        /// <returns>The csv formatted values without trailing newlines or commas</returns>
+        public virtual string ToCSV()
+        {
+            return $"{g},{depth},{lambda}";
+        }
 
         public float g = 9.81f;
         public float depth = 500f;
@@ -41,41 +61,26 @@ namespace Water.Spectrum
             this.settings = settings;
         }
 
-        public virtual void OnEnable()
+        protected virtual void OnEnable()
         {
             settings = GraphicsSettings.GetRenderPipelineSettings<WaterSimulationSettings>();
             GraphicsSettings.Subscribe<WaterSimulationSettings>(OnSettingsUpdate);
         }
 
-        public virtual void Reset() { }
+        protected virtual void Reset() { }
 
-        public virtual void OnDisable()
+        protected virtual void OnDisable()
         {
             GraphicsSettings.Unsubscribe<WaterSimulationSettings>(OnSettingsUpdate);
         }
 
-        // static float NormalRandom()
-        // {
-        //     return Mathf.Cos(2 * Mathf.PI * UnityEngine.Random.value) * Mathf.Sqrt(-2 * Mathf.Log(UnityEngine.Random.value));
-        // }
-
-        // void GenerateNoiseTexture(WaterSimulationSettings settings)
-        // {
-        //     var size = (int)settings.renderingPatchSize;
-        //     noise = new Texture2D(size, size, TextureFormat.RGFloat, false, true)
-        //     {
-        //         filterMode = FilterMode.Point
-        //     };
-        //     for (int i = 0; i < size; i++)
-        //     {
-        //         for (int j = 0; j < size; j++)
-        //         {
-        //             noise.SetPixel(i, j, new Vector4(NormalRandom(), NormalRandom()));
-        //         }
-        //     }
-        //     noise.Apply();
-        // }
-
+        /// <summary>
+        /// Calculate initial spectrum from spectrum samples.
+        /// 
+        /// This function should be called second.
+        /// </summary>
+        /// <param name="cascade">The cascade to use for calculations</param>
+        /// <param name="noise">A gaussian noise RG texture</param>
         public void CalculateInitials(SpectrumCascade cascade, Texture noise)
         {
             var size = cascade.spectrumSamplesTexture.width;
@@ -107,6 +112,13 @@ namespace Water.Spectrum
             initialSpectrumShader.Dispatch(KERNEL_CONJ_SPECTRUM, size / 8, size / 8, 1);
         }
 
+        /// <summary>
+        /// Evolves the initial spectrum to the speficied time.
+        /// 
+        /// This function should be called third.
+        /// </summary>
+        /// <param name="cascade">The cascade to use for calculations</param>
+        /// <param name="time">The elapsed time since start</param>
         public void Evolve(SpectrumCascade cascade, float time)
         {
             if (time < 0) return;
@@ -127,6 +139,14 @@ namespace Water.Spectrum
             evolveSpectrumShader.Dispatch(KERNEL_FOURIER_SIGNALS, size / 8, size / 8, 1);
         }
 
+        /// <summary>
+        /// Calculates the displacement, derivatives and turbulence texture.
+        /// 
+        /// This function should be called last.
+        /// </summary>
+        /// <param name="cascade">The cascade to use for calculations</param>
+        /// <param name="fft"></param>
+        /// <param name="deltaTime"></param>
         public void CalculateDisplacement(SpectrumCascade cascade, FastFourierTransform fft, float deltaTime)
         {
             var size = cascade.spectrumSamplesTexture.width;

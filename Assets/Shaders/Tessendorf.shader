@@ -36,8 +36,8 @@ Shader "Universal Render Pipeline/Nature/Water/Tessendorf"
 		_FoamColor("Foam Color", Color) = (1,1,1,1)
 
 		// Fog
-		_FogColor ("Water Fog Color", Color) = (0, 0, 0.25, 1)
-		_FogDensity ("Water Fog Density", Range(0, 2)) = 0.25
+		_WaterFogColor ("Water Fog Color", Color) = (0, 0, 0.25, 1)
+		_WaterFogDensity ("Water Fog Density", Range(0, 2)) = 0.25
 
 		_EnvironmentLightStrength("Environment Light strength", Range(0,1)) = 1
 		_Roughness("Roughness", Range(0.001,1)) = 0.05
@@ -53,7 +53,7 @@ Shader "Universal Render Pipeline/Nature/Water/Tessendorf"
 			"RenderPipeline" = "UniversalRenderPipeline"
 		}
 		ZWrite Off
-		Cull Off
+		Cull Back
 		LOD 300
 		
 		HLSLINCLUDE
@@ -115,8 +115,8 @@ Shader "Universal Render Pipeline/Nature/Water/Tessendorf"
 
 		half4 _FoamColor;
 
-		half4 _FogColor;
-		half _FogDensity;
+		half4 _WaterFogColor;
+		half _WaterFogDensity;
 		CBUFFER_END
 
 		float3 SampleDisplacement(float2 worldXZ, float3 lodWeights) {
@@ -447,21 +447,27 @@ Shader "Universal Render Pipeline/Nature/Water/Tessendorf"
 				// TODO: Use normalOS as macronormal and using tangent move mesonormal in tangent space
 				float3 macroNormal = float3(0, 1, 0);
 				float3 mesoNormal = NormalFromDerivatives(derivatives);
-
+				
 				// Depth & refraction calculation
 				float2 distortion = TransformWorldToViewNormal(-mesoNormal).xz * 10 * _RefractionStrength;
 				float2 uvSS = GetNormalizedScreenSpaceUV(input.positionCS.xy + distortion);
-
-				real rawDepth = SampleSceneZBuffer(uvSS);
-				// real surfaceDepth = UNITY_Z_0_FAR_FROM_CLIPSPACE(input.positionCS.z);
-				real surfaceDepth = input.positionCS.z;
-				real eyeDepth = LinearEyeDepth(rawDepth, _ZBufferParams);
-				real depthDifference = saturate((rawDepth - surfaceDepth - 0.1));
-
-				// Refraction & fog
+				uvSS = (floor(uvSS * _CameraDepthTexture_TexelSize.zw) + 0.5) * abs(_CameraDepthTexture_TexelSize.xy);
+				float rawDepth = SampleSceneDepth(uvSS);
+				float backDepth = LinearEyeDepth(rawDepth, _ZBufferParams);
+				float surfDepth = UNITY_Z_0_FAR_FROM_CLIPSPACE( input.positionCS.z );
+				float depthDiff = (backDepth - surfDepth);
+				
+				// refraction only for underwater objects
+				// distortion *= saturate(depthDiff);
+				uvSS = GetNormalizedScreenSpaceUV(input.positionCS.xy + distortion);
+				uvSS = (floor(uvSS * _CameraDepthTexture_TexelSize.zw) + 0.5) * abs(_CameraDepthTexture_TexelSize.xy);
+				rawDepth = SampleSceneDepth(uvSS);
+				backDepth = LinearEyeDepth(rawDepth, _ZBufferParams);
+				depthDiff = backDepth - surfDepth;
+				
 				half3 sceneColor = SampleSceneColor(uvSS);
-				float fogFactor = exp2(-_BubbleDensity * depthDifference);
-				half3 underwaterColor = lerp(_FogColor, sceneColor, fogFactor);
+				float fogFactor = saturate(exp2(-_WaterFogDensity * depthDiff));
+				half3 underwaterColor = lerp(_WaterFogColor.rgb, sceneColor, fogFactor);
 
 				// Foam
 				// TODO: Fix jacobian foam
@@ -471,8 +477,11 @@ Shader "Universal Render Pipeline/Nature/Water/Tessendorf"
 
 				// half depthEdge = saturate(rawDepth * 20);
 				// half depthAdd = saturate(1 - rawDepth * 4) * 0.5;
-				// half edgeFoam = saturate((1 - min(rawDepth, surfaceDepth) * 0.5 - 0.25) + depthAdd) * depthEdge;
+				// half edgeFoam = saturate((1 - min(rawDepth, surfDepth) * 0.5 - 0.25) + depthAdd) * depthEdge;
 				// foam += edgeFoam;
+				// if (abs(depthDiff) < 100) {
+				// 	foam += 1;
+				// }
 
 				// PBR Scatter model
 				half NdotL = saturate(dot(mesoNormal, lightDir));
@@ -496,7 +505,8 @@ Shader "Universal Render Pipeline/Nature/Water/Tessendorf"
 				specular *= saturate(dot(mesoNormal, lightDir));
 
 				// Reflection
-				half3 irradiance = _EnvironmentLightStrength * GlossyEnvironmentReflection(reflect(-viewDir, mesoNormal), input.positionWS, roughness, 0.0, uvSS);
+				half3 irradiance = _EnvironmentLightStrength * CalculateIrradianceFromReflectionProbes(reflect(-viewDir, mesoNormal), input.positionWS, roughness);
+				// half3 irradiance = _EnvironmentLightStrength * GlossyEnvironmentReflection(reflect(-viewDir, mesoNormal), input.positionWS, roughness, 0.0, uvSS);
 				
 				// Scatter term
 				half waveHeight = max(0.0f, input.displacementWS.y);
@@ -504,41 +514,32 @@ Shader "Universal Render Pipeline/Nature/Water/Tessendorf"
 				half3 bubbleColor = _BubbleColor.rgb;
 				half bubbleDensity = _BubbleDensity;
 
-				half k1 = _WavePeakScatterStrength * waveHeight * pow(saturate(dot(lightDir, -viewDir)), 4.0f) * pow(0.5f - 0.5f * dot(lightDir, mesoNormal), 3.0f);
-				half k2 = _ScatterStrength * pow(saturate(dot(viewDir, mesoNormal)), 2.0f);
-				half k3 = _ScatterShadowStrength * NdotL;
-				half k4 = bubbleDensity;
+				half k1 = _WavePeakScatterStrength * waveHeight * pow(saturate(dot(lightDir, -viewDir)), 4.0f) * pow(0.5f - 0.5f * dot(lightDir, mesoNormal), 3.0f); // Wave peak scatter
+				half k2 = _ScatterStrength * pow(saturate(dot(viewDir, mesoNormal)), 2.0f); // Underwater scatter
+				half k3 = _ScatterShadowStrength * NdotL; // "Diffuse"
+				half k4 = bubbleDensity; // Ambient
 
-				half3 scatter = (k1 + k2) * scatterColor * sun.color * rcp(1 + lightMask);
-				scatter += k3 * scatterColor * sun.color + k4 * bubbleColor * sun.color;
+				half3 pureScatter = (k1 + k2) * scatterColor * sun.color * rcp(1 + lightMask);
+				half3 ambient = k3 * scatterColor * sun.color + k4 * bubbleColor * sun.color;
+
+				half3 scatter = pureScatter + ambient;
 
 				// Final color
 				half3 output = (1 - fresnel) * scatter + specular + fresnel * irradiance;
 
 				// Final foam
 				output = lerp(output, _FoamColor, saturate(foam));
-
-				// Final depth
-				output = lerp(output, underwaterColor, 0.35f);
-				output.rgb = MixFogColor(output.rgb, _FogColor.rgb, inputData.fogCoord);
 				
+				// Final depth & fog
+				output = MixFogColor(output, _WaterFogColor, input.fogFactor);
+				// return half4(fogFactor.xxx,1);
+				float traslucency = 0.32;
+				output = saturate(lerp(output, underwaterColor, fogFactor * traslucency) + output * fogFactor * traslucency);
 
-				// //If the two are similar, then there is an object intersecting with our object
-				// float diff = (abs(rawDepth - surfaceDepth)) / 0.005;
- 
-				// if(diff <= 1)
-				// {
-				//	 output.rgb = lerp(_FoamColor.rgb,
-				//					   output.rgb,
-				//					   float4(diff, diff, diff, diff));
-				// }
+				// TODO: Edge foam using depth
+				// TODO: Better foam (noise?)
 
 				output = max(0.0f, output);
-
-				half4 ad = AdditionalData(input.positionWS, input.displacementWS);
-
-				half3 screenUV = input.shadowCoord.xyz / input.shadowCoord.w;//screen UVs
-				float3 testDepth = WaterDepth(input.positionWS, ad, screenUV.xy);
 
 				// DEBUGS
 				#if defined(_DEBUG_FOAM)
@@ -556,7 +557,7 @@ Shader "Universal Render Pipeline/Nature/Water/Tessendorf"
 				#elif defined(_DEBUG_FRESNEL)
 					return half4(fresnel.xxx, 1);
 				#elif defined(_DEBUG_WATERDEPTH)
-					return half4(frac(testDepth), 1);
+					return half4((depthDifference.xxx), 0.5);
 				#else
 					return half4(output, 1);
 				#endif
@@ -564,14 +565,6 @@ Shader "Universal Render Pipeline/Nature/Water/Tessendorf"
 			}
 			ENDHLSL
 		}
-
-		// TODO: Transparent volumes cast a shadow with intensity depending on depth (volume depth and distance from bottom to fragments)
-		// But that would render them in the depth buffer so ZWrite should be off
-		// Pass{
-		// 	Name "ShadowPass"
-		// 	Tags { "LightMode"="ShadowCaster" }
-		// 	ZWrite Off
-		// }
 
 		Pass{
 			Name "DepthNormalsPass"
@@ -630,14 +623,5 @@ Shader "Universal Render Pipeline/Nature/Water/Tessendorf"
 			}
 			ENDHLSL
 		}
-
-		// TODO: same as shadows
-		// Pass{
-		// 	Name "MetaPass"
-		// 	Tags {
-		// 		"LightMode"="Meta"
-		// 	}
-		// }
-
 	}
 }

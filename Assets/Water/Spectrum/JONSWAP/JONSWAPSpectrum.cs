@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Water.Spectrum
 {
     [CreateAssetMenu(fileName = "New JONSWAP Spectrum settings", menuName = "Water/Spectrums/JONSWAP spectrum")]
-    public class JONSWAPSpectrumSettings : WaterFrequencySpectrum
+    public class JONSWAPSpectrum : WaterFrequencySpectrum
     {
         private ComputeShader sampleSpectrumShader;
         private int KERNEL_SAMPLE;
@@ -35,14 +35,14 @@ namespace Water.Spectrum
             shortWavesFade = 0.01f
         };
 
-        public override void OnEnable()
+        protected override void OnEnable()
         {
             unsafe { spectrumBuffer = new ComputeBuffer(2, sizeof(JONSWAPSpectrumParameters)); }
 
             base.OnEnable();
         }
 
-        public override void OnDisable()
+        protected override void OnDisable()
         {
             base.OnDisable();
 
@@ -88,30 +88,53 @@ namespace Water.Spectrum
             if (time < 0) return this;
             if (time > 1) return end;
 
-            if (end is JONSWAPSpectrumSettings endPhil)
-            {
-                return new JONSWAPSpectrumSettings()
-                {
-                    depth = math.lerp(this.depth, end.depth, time),
-                    g = math.lerp(this.g, end.g, time),
-                    lambda = math.lerp(this.lambda, end.lambda, time),
+            var inst = CreateInstance<JONSWAPSpectrum>();
 
-                    localBand = JONSWAPSpectrumBand.Lerp(this.localBand, endPhil.localBand, time),
-                    swellBand = JONSWAPSpectrumBand.Lerp(this.swellBand, endPhil.swellBand, time),
-                };
+            if (end is JONSWAPSpectrum endPhil)
+            {
+                inst.depth = math.lerp(this.depth, end.depth, time);
+                inst.g = math.lerp(this.g, end.g, time);
+                inst.lambda = math.lerp(this.lambda, end.lambda, time);
+
+                inst.localBand = JONSWAPSpectrumBand.Lerp(this.localBand, endPhil.localBand, time);
+                inst.swellBand = JONSWAPSpectrumBand.Lerp(this.swellBand, endPhil.swellBand, time);
             }
             else
             {
-                return new JONSWAPSpectrumSettings()
-                {
-                    depth = math.lerp(this.depth, end.depth, time),
-                    g = math.lerp(this.g, end.g, time),
-                    lambda = math.lerp(this.lambda, end.lambda, time),
+                inst.depth = math.lerp(this.depth, end.depth, time);
+                inst.g = math.lerp(this.g, end.g, time);
+                inst.lambda = math.lerp(this.lambda, end.lambda, time);
 
-                    localBand = localBand,
-                    swellBand = swellBand,
-                };
+                inst.localBand = localBand;
+                inst.swellBand = swellBand;
             }
+
+            return inst;
+        }
+
+        public override string CSVFormat()
+        {
+            return $"{base.CSVFormat()},{CSVFormatBand(nameof(localBand), localBand)},{CSVFormatBand(nameof(swellBand), swellBand)}";
+        }
+
+        private string CSVFormatBand(string bandName, JONSWAPSpectrumBand band)
+        {
+            return $"{bandName}{nameof(band.scale)},{bandName}{nameof(band.windSpeed)}," +
+            $"{bandName}{nameof(band.windDirection)},{bandName}{nameof(band.fetch)}," +
+            $"{bandName}{nameof(band.spreadBlend)},{bandName}{nameof(band.swell)}," +
+            $"{bandName}{nameof(band.shortWavesFade)},{bandName}{nameof(band.peakEnhancement)}";
+        }
+
+        public override string ToCSV()
+        {
+            return $"{base.ToCSV()},{ToCSVBand(localBand)},{ToCSVBand(swellBand)}s";
+        }
+
+        private string ToCSVBand(JONSWAPSpectrumBand band)
+        {
+            return $"{band.scale},{band.windSpeed},{band.windDirection}," +
+            $"{band.fetch},{band.spreadBlend},{band.swell}," +
+            $"{band.shortWavesFade},{band.peakEnhancement}";
         }
 
         // Spectrum

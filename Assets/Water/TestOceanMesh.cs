@@ -415,7 +415,7 @@ public class TestOceanMesh : MonoBehaviour
         if (_depthCam == null)
         {
             var go =
-                new GameObject("WaterDepthCamera") { hideFlags = HideFlags.DontSave }; //create the cameraObject
+                new GameObject("WaterDepthCamera") { hideFlags = HideFlags.HideAndDontSave }; //create the cameraObject
             _depthCam = go.AddComponent<Camera>();
         }
 

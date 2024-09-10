@@ -43,7 +43,7 @@ namespace Water
             InitOrReset(GraphicsSettings.GetRenderPipelineSettings<WaterSimulationSettings>(), true);
             GraphicsSettings.Subscribe(OnSettingsUpdate);
 
-            // TODO: tmp
+            // TODO: tmp to see textures on unlit material
             var renderer = GetComponent<MeshRenderer>();
             renderer.materials[0].SetTexture("_BaseMap", cascade0.displacement);
         }
@@ -74,7 +74,7 @@ namespace Water
             wakesShader.SetTexture(0, "_HDynamicField", wakeCascade0.heightField);
             wakesShader.Dispatch(0, (int)waterSimSettings.renderingPatchSize / 8, (int)waterSimSettings.renderingPatchSize / 8, 1);
 
-            // TODO: Apparently FFTs are broken
+            // TODO: Apparently forward FFTs are broken
             // Takes the fields to fourier space
             renderingFFT.FFT2D(wakeCascade0.heightField, wakeCascade0.heightSpectrum, true);
             renderingFFT.FFT2D(wakeCascade0.potentialField, wakeCascade0.potentialSpectrum, true);

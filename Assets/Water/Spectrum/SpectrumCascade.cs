@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace Water.Spectrum
 {
+    // [Serializable]
     public class SpectrumCascade : IDisposable
     {
         public float lengthScale;

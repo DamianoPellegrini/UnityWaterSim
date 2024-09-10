@@ -100,5 +100,6 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-Assets/Meshes/
-Assets/Prefabs/
+# Don't store art, etc.
+/[Aa]ssets/[Mm]eshes/
+/[Aa]ssets/[Pp]refabs/

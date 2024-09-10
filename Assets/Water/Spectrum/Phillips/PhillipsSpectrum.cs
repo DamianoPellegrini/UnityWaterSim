@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Water.Spectrum
 {
     [CreateAssetMenu(fileName = "New Phillips Spectrum settings", menuName = "Water/Spectrums/Phillips spectrum")]
-    public class PhillipsSpectrumSettings : WaterFrequencySpectrum
+    public class PhillipsSpectrum : WaterFrequencySpectrum
     {
         private ComputeShader sampleSpectrumShader;
         private int KERNEL_SAMPLE;
@@ -57,31 +57,41 @@ namespace Water.Spectrum
             if (time < 0) return this;
             if (time > 1) return end;
 
-            if (end is PhillipsSpectrumSettings endPhil)
-            {
-                return new PhillipsSpectrumSettings()
-                {
-                    depth = math.lerp(this.depth, end.depth, time),
-                    g = math.lerp(this.g, end.g, time),
-                    lambda = math.lerp(this.lambda, end.lambda, time),
+            var inst = CreateInstance<PhillipsSpectrum>();
 
-                    alpha = math.lerp(this.alpha, endPhil.alpha, time),
-                    windSpeed = math.lerp(this.windSpeed, endPhil.windSpeed, time),
-                    windDirection = math.lerp(this.windDirection, endPhil.windDirection, time),
-                    suppressThreshold = math.lerp(this.suppressThreshold, endPhil.suppressThreshold, time),
-                };
-            } else {
-                return new PhillipsSpectrumSettings()
-                {
-                    depth = math.lerp(this.depth, end.depth, time),
-                    g = math.lerp(this.g, end.g, time),
-                    lambda = math.lerp(this.lambda, end.lambda, time),
-                    alpha = alpha,
-                    windSpeed = windSpeed,
-                    windDirection = windDirection,
-                    suppressThreshold = suppressThreshold,
-                };
+            if (end is PhillipsSpectrum endPhil)
+            {
+                inst.depth = math.lerp(depth, end.depth, time);
+                inst.g = math.lerp(g, end.g, time);
+                inst.lambda = math.lerp(lambda, end.lambda, time);
+
+                inst.alpha = math.lerp(alpha, endPhil.alpha, time);
+                inst.windSpeed = math.lerp(windSpeed, endPhil.windSpeed, time);
+                inst.windDirection = math.lerp(windDirection, endPhil.windDirection, time);
+                inst.suppressThreshold = math.lerp(suppressThreshold, endPhil.suppressThreshold, time);
             }
+            else
+            {
+                inst.depth = math.lerp(depth, end.depth, time);
+                inst.g = math.lerp(g, end.g, time);
+                inst.lambda = math.lerp(lambda, end.lambda, time);
+                inst.alpha = alpha;
+                inst.windSpeed = windSpeed;
+                inst.windDirection = windDirection;
+                inst.suppressThreshold = suppressThreshold;
+            }
+
+            return inst;
+        }
+
+        public override string CSVFormat()
+        {
+            return $"{base.CSVFormat()},{nameof(alpha)},{nameof(windSpeed)},{nameof(windDirection)},{nameof(suppressThreshold)}";
+        }
+
+        public override string ToCSV()
+        {
+            return $"{base.ToCSV()},{alpha},{windSpeed},{windDirection},{suppressThreshold}";
         }
 
         // Spectrum

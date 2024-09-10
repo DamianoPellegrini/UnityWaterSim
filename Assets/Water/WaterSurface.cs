@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Water.Spectrum;
@@ -9,22 +10,29 @@ namespace Water
     [DisallowMultipleComponent]
     public partial class WaterSurface : MonoBehaviour
     {
-        public WaterFrequencySpectrum spectrum;
+        // public WaterFrequencySpectrum spectrum;
+        public WaterFrequencySpectrum[] spectrums;
+        // TODO: make T in range using custom editor
+        [Min(0)] public float SpectrumInterpolationParameter;
+
         public Texture2D gaussianNoise;
 
         public float lengthScale0 = 250;
         public float lengthScale1 = 17;
         public float lengthScale2 = 5;
 
-        protected WaterSimulationSettings waterSimSettings;
+        // [Header("Debug")]
         public SpectrumCascade cascade0;
         public SpectrumCascade cascade1;
         public SpectrumCascade cascade2;
+
+        protected WaterSimulationSettings waterSimSettings;
         protected SpectrumCascade cascadePhys;
         protected FastFourierTransform renderingFFT;
         protected FastFourierTransform physicsFFT;
-        private Texture2D physicsReadback;
 
+        private Texture2D displacementReadback;
+        private Texture2D derivativesReadback;
         private float readbackRequestTime = float.NaN;
         private float deltaReadbackTime;
 
@@ -45,7 +53,8 @@ namespace Water
             cascadePhys = new SpectrumCascade($"{name}_{nameof(cascadePhys)}", (int)settings.physicsPatchSize, 250, 0.0001f, boundary1);
             renderingFFT = new FastFourierTransform((int)settings.renderingPatchSize, settings.FFTShader);
             physicsFFT = new FastFourierTransform((int)settings.physicsPatchSize, settings.FFTShader);
-            physicsReadback = new Texture2D((int)settings.physicsPatchSize, (int)settings.physicsPatchSize);
+            displacementReadback = new Texture2D((int)settings.physicsPatchSize, (int)settings.physicsPatchSize);
+            derivativesReadback = new Texture2D((int)settings.physicsPatchSize, (int)settings.physicsPatchSize);
         }
 
         Action<WaterSimulationSettings, string> OnSettingsUpdate => (settings, name) =>
@@ -66,8 +75,23 @@ namespace Water
             Dispose();
         }
 
+        private WaterFrequencySpectrum GetLerpedSpectrum()
+        {
+            if (spectrums.Length == 0) return null;
+            if (spectrums.Length == 1) return spectrums[0];
+
+            var range = Mathf.Min(SpectrumInterpolationParameter, spectrums.Length - 1);
+            var lower = Mathf.FloorToInt(range);
+            var upper = Mathf.CeilToInt(range);
+            var lerp = range - lower;
+
+            return spectrums[lower].Lerp(spectrums[upper], lerp);
+        }
+
         protected void Update()
         {
+            var spectrum = GetLerpedSpectrum();
+
             if (cascade0 == null || cascade2 == null || cascade1 == null) return;
             if (spectrum == null) return;
             if (gaussianNoise == null) return;
@@ -106,17 +130,20 @@ namespace Water
 
         protected void FixedUpdate()
         {
+            var spectrum = GetLerpedSpectrum();
+
+            if (cascadePhys == null) return;
             if (spectrum == null) return;
             if (gaussianNoise == null) return;
 
             // Update spectrum slices
-            cascadePhys.lengthScale = lengthScale0;
-            cascadePhys.cutoffHigh = 2 * Mathf.PI / lengthScale1 * 6f;
+            cascadePhys.lengthScale = cascade0.lengthScale;
+            cascadePhys.cutoffHigh = cascade0.cutoffHigh;
 
             spectrum.SampleSpectrum(cascadePhys);
             spectrum.CalculateInitials(cascadePhys, gaussianNoise);
-            spectrum.Evolve(cascadePhys, Time.time + deltaReadbackTime);
-            spectrum.CalculateDisplacement(cascadePhys, physicsFFT, Time.deltaTime);
+            spectrum.Evolve(cascadePhys, Time.fixedTime + Time.fixedDeltaTime * deltaReadbackTime * 2);
+            spectrum.CalculateDisplacement(cascadePhys, physicsFFT, Time.fixedDeltaTime);
             RequestReadbacks();
         }
 
@@ -125,11 +152,12 @@ namespace Water
             if (!float.IsNaN(readbackRequestTime)) return;
             readbackRequestTime = Time.time;
             AsyncGPUReadback.Request(cascadePhys.displacement, 0, TextureFormat.RGBAFloat, OnCompleteReadback);
+            AsyncGPUReadback.Request(cascadePhys.derivatives, 0, TextureFormat.RGBAFloat, request => OnCompleteReadback(request, derivativesReadback));
         }
 
         public float GetWaterHeight(Vector3 position)
         {
-            // Newton approx. 3 iters
+            // Newton approx. 4 iters
             Vector3 displacement = GetWaterDisplacement(position);
             displacement = GetWaterDisplacement(position - displacement);
             displacement = GetWaterDisplacement(position - displacement);
@@ -139,11 +167,30 @@ namespace Water
 
         public Vector3 GetWaterDisplacement(Vector3 position)
         {
-            Color c = physicsReadback.GetPixelBilinear(position.x / lengthScale0, position.z / lengthScale0);
+            Color c = displacementReadback.GetPixelBilinear(position.x / lengthScale0, position.z / lengthScale0);
             return new Vector3(c.r, c.g, c.b);
         }
 
-        void OnCompleteReadback(AsyncGPUReadbackRequest request) => OnCompleteReadback(request, physicsReadback);
+        public Vector3 GetWaterNormal(Vector3 position)
+        {
+            Vector3 displacement = GetWaterDisplacement(position);
+            displacement = GetWaterDisplacement(position - displacement);
+            displacement = GetWaterDisplacement(position - displacement);
+            position = GetWaterDisplacement(position - displacement);
+
+            Color c = derivativesReadback.GetPixelBilinear(position.x / lengthScale0, position.z / lengthScale0);
+            return new Vector3(c.r / (1 + c.b), 1, c.g / (1 + c.a));
+        }
+
+        void OnCompleteReadback(AsyncGPUReadbackRequest request)
+        {
+            if (displacementReadback != null)
+            {
+                deltaReadbackTime = Time.time - readbackRequestTime;
+                readbackRequestTime = float.NaN;
+            }
+            OnCompleteReadback(request, displacementReadback);
+        }
 
         void OnCompleteReadback(AsyncGPUReadbackRequest request, Texture2D result)
         {
@@ -154,8 +201,6 @@ namespace Water
             }
             if (result != null)
             {
-                deltaReadbackTime = Time.time - readbackRequestTime;
-                readbackRequestTime = float.NaN;
                 result.LoadRawTextureData(request.GetData<Color>());
                 result.Apply();
             }
@@ -169,7 +214,7 @@ namespace Water
             if (cascadePhys != null) { cascadePhys.Dispose(); }
             if (renderingFFT != null) { renderingFFT.Dispose(); }
             if (physicsFFT != null) { physicsFFT.Dispose(); }
-            if (physicsReadback != null) { DestroyImmediate(physicsReadback); }
+            if (displacementReadback != null) { DestroyImmediate(displacementReadback); }
         }
     }
 }
