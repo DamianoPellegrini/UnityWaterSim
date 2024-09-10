@@ -127,7 +127,7 @@ namespace Water.Spectrum
 
         public override string ToCSV()
         {
-            return $"{base.ToCSV()},{ToCSVBand(localBand)},{ToCSVBand(swellBand)}s";
+            return $"{base.ToCSV()},{ToCSVBand(localBand)},{ToCSVBand(swellBand)}";
         }
 
         private string ToCSVBand(JONSWAPSpectrumBand band)

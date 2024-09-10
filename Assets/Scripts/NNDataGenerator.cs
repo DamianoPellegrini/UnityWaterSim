@@ -45,7 +45,7 @@ namespace NN
             spectrum.Evolve(cascade, time);
             spectrum.CalculateDisplacement(cascade, fft, deltaTime);
 
-            using (var sw = new StreamWriter(stream, Encoding.ASCII))
+            using (var sw = new StreamWriter(stream, Encoding.ASCII, 4096, true))
             {
                 var displacement = ToTexture2D(cascade.displacement);
                 var derivative = ToTexture2D(cascade.derivatives);
@@ -70,8 +70,6 @@ namespace NN
                         ));
                     }
                 }
-
-                sw.Close();
             }
         }
 

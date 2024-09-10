@@ -118,20 +118,15 @@ namespace NN
 
                 // TODO: Sistema stream che non va dopo il primo round
 
-                File.CreateText(path);
-
-                using (var fStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Write))
+                using (var fStream = new FileStream(path, FileMode.Create, FileAccess.Write))
                 {
-                    using (var bufStream = new BufferedStream(fStream))
-                    {
-                        // Write header
-                        var bytes = new ASCIIEncoding().GetBytes(NNDataGenerator.CSVFormat(spectrum) + Environment.NewLine);
-                        bufStream.Write(bytes, 0, bytes.Length);
+                    // Write header
+                    var bytes = new ASCIIEncoding().GetBytes(NNDataGenerator.CSVFormat(spectrum) + Environment.NewLine);
+                    fStream.Write(bytes, 0, bytes.Length);
 
-                        for (int i = 0; i < sampleCountSlider.value; i++)
-                        {
-                            gen.Generate(bufStream, spectrum, Time.time, Time.deltaTime, noise);
-                        }
+                    for (int i = 0; i < sampleCountSlider.value; i++)
+                    {
+                        gen.Generate(fStream, spectrum, Time.time, Time.deltaTime, noise);
                     }
                 }
             }
