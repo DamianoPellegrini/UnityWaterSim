@@ -6,10 +6,12 @@ static const float EULER_CONST = 2.71828183;
 typedef float2 complex;
 typedef float4 complex2;
 
+// Get the real part of a complex number
 float re(complex c) {
     return c.x;
 }
 
+// Get the imaginary part of a complex number
 float im(complex c) {
     return c.y;
 }
@@ -40,14 +42,17 @@ complex complex_conj(complex c) {
 	return complex(c.x, -c.y);
 }
 
+// Return a complex number in Euler's form with given phase (angle)
 complex complex_euler(float phase) {
     return complex(cos(phase), sin(phase));
 }
 
+// Calculate the arccosine of the real part of a complex number (angle in Euler's form)
 float complex_aeuler(complex c) {
     return acos(c.x);
 }
 
+// Convert a complex number from rectangular to polar form
 complex complex_pol(complex c)
 {
 	float z = complex_norm(c);
@@ -55,12 +60,14 @@ complex complex_pol(complex c)
 	return complex(z, f);
 }
 
+// Convert a complex number from polar to rectangular form
 complex complex_rec(complex c)
 {
 	float z = abs(c.x);
 	return complex(z * cos(c.y), z * sin(c.y));
 }
 
+// Raise a complex number to a complex power using polar form
 complex complex_pow(complex base, complex exp)
 {
 	complex b = complex_pol(base);
@@ -74,6 +81,7 @@ complex complex_pow(complex base, complex exp)
 	return complex_rec(rpol);
 }
 
+// Exponentiate a complex number
 complex complex_exp(complex c) {
 	return complex(cos(c.y), sin(c.y)) * exp(c.x);
 }

@@ -3,6 +3,10 @@ using UnityEngine;
 
 namespace Water
 {
+    /// <summary>
+    /// Manages and executes FFT and inverse FFT on 2D data using Unity's ComputeShader.
+    /// Generates butterfly lookup tables for optimized performance in frequency domain transformations.
+    /// </summary>
     public class FastFourierTransform : IDisposable
     {
 
@@ -10,6 +14,11 @@ namespace Water
         readonly ComputeShader fftShader;
         readonly RenderTexture butterflyTexture;
 
+        /// <summary>
+        /// Initializes FFT resources including butterfly lookup table and compute shader kernels.
+        /// </summary>
+        /// <param name="size">Size of the FFT grid.</param>
+        /// <param name="fftShader">Compute shader used for FFT processing.</param>
         public FastFourierTransform(int size, ComputeShader fftShader)
         {
             this.size = size;
@@ -26,6 +35,12 @@ namespace Water
             butterflyTexture = PrecomputeTwiddleFactorsAndInputIndices();
         }
 
+        /// <summary>
+        /// Executes the 2D FFT on the input RenderTexture, writing results to a buffer.
+        /// </summary>
+        /// <param name="input">Input texture containing spatial domain data.</param>
+        /// <param name="buffer">Buffer texture for holding intermediate and output data.</param>
+        /// <param name="outputToInput">If true, final output is written back to the input texture.</param>
         public void FFT2D(RenderTexture input, RenderTexture buffer, bool outputToInput = false)
         {
             int logSize = (int)Mathf.Log(size, 2);
@@ -64,6 +79,14 @@ namespace Water
             }
         }
 
+        /// <summary>
+        /// Executes the 2D inverse FFT on the input RenderTexture, writing results to a buffer.
+        /// </summary>
+        /// <param name="input">Input texture containing frequency domain data.</param>
+        /// <param name="buffer">Buffer texture for holding intermediate and output data.</param>
+        /// <param name="outputToInput">If true, final output is written back to the input texture.</param>
+        /// <param name="scale">Applies scaling to normalize results if true.</param>
+        /// <param name="permute">Permutes the output if true.</param>
         public void IFFT2D(RenderTexture input, RenderTexture buffer, bool outputToInput = false, bool scale = true, bool permute = false)
         {
             int logSize = (int)Mathf.Log(size, 2);
@@ -116,6 +139,10 @@ namespace Water
             }
         }
 
+        /// <summary>
+        /// Precomputes the butterfly lookup table, storing twiddle factors and input indices for FFT stages.
+        /// </summary>
+        /// <returns>RenderTexture containing precomputed twiddle factors.</returns>
         RenderTexture PrecomputeTwiddleFactorsAndInputIndices()
         {
             int logSize = (int)Mathf.Log(size, 2);
@@ -132,12 +159,15 @@ namespace Water
             return rt;
         }
 
+        /// <summary>
+        /// Releases resources used by this FFT instance.
+        /// </summary>
         public void Dispose()
         {
             butterflyTexture.Release();
         }
 
-        // Kernel IDs:
+        // Kernel and property IDs for shader operations
         readonly int KERNEL_PRECOMPUTE;
         readonly int KERNEL_HORIZONTAL_STEP_FFT;
         readonly int KERNEL_VERTICAL_STEP_FFT;
@@ -146,7 +176,6 @@ namespace Water
         readonly int KERNEL_SCALE;
         readonly int KERNEL_PERMUTE;
 
-        // Property IDs:
         readonly int PROP_BUTTERFLY_TEX = Shader.PropertyToID("_ButterflyTexture");
         readonly int PROP_BUFFER0_TEX = Shader.PropertyToID("_Buffer0");
         readonly int PROP_BUFFER1_TEX = Shader.PropertyToID("_Buffer1");

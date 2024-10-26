@@ -13,7 +13,9 @@ namespace Water.Physics
         const float kDampner = 0.005f;
         const float kWaterDensity = 1000;
 
-
+        /// <summary>
+        /// Defines the buoyancy calculation type, either using SimulatedPhysics or AccuratedPhysics.
+        /// </summary>
         public enum BuoyancyType
         {
             SimulatedPhysics,
@@ -22,6 +24,9 @@ namespace Water.Physics
 
         public BuoyancyType buoyancyType = BuoyancyType.AccuratedPhysics;
 
+        /// <summary>
+        /// The source of water displacement data, affecting buoyancy forces.
+        /// </summary>
         public WaterSurface displacementSource;
         Rigidbody rb;
         Collider[] colliders;
@@ -46,6 +51,9 @@ namespace Water.Physics
         NativeArray<float3> samplePoints;
         float3[] velocity;
 
+        /// <summary>
+        /// Calculates the bounding box of the object's colliders.
+        /// </summary>
         Bounds VoxelBounds()
         {
             var bounds = new Bounds();

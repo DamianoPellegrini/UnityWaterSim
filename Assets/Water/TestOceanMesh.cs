@@ -5,10 +5,17 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using Water;
 
+/// <summary>
+/// Controls the ocean mesh generation and rendering.
+/// Requires a WaterSurface component to be attached to the same GameObject.
+/// </summary>
 [RequireComponent(typeof(WaterSurface))]
 public class TestOceanMesh : MonoBehaviour
 {
     private WaterSurface waterSurface;
+    /// <summary>
+    /// Viewer reference (typically the camera).
+    /// </summary>
     public Transform viewer;
     public Material oceanMaterial;
     public bool updateMaterialProperties;
@@ -40,6 +47,10 @@ public class TestOceanMesh : MonoBehaviour
         waterSurface = GetComponent<WaterSurface>();
     }
 
+    /// <summary>
+    /// Starts the ocean mesh generation process.
+    /// Captures the depth map, initializes materials, and creates the initial mesh.
+    /// </summary>
     private void Start()
     {
         if (viewer == null)
@@ -83,6 +94,9 @@ public class TestOceanMesh : MonoBehaviour
         InstantiateMeshes();
     }
 
+    /// <summary>
+    /// Updates the material properties and checks if the mesh needs to be recreated.
+    /// </summary>
     private void Update()
     {
         if (rings.Count != clipLevels || trims.Count != clipLevels
