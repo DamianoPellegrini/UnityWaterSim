@@ -16,15 +16,15 @@ namespace Water
 
         public enum PatchSize : int
         {
-            Low = 64,
-            Medium = 128,
-            High = 256,
-            Ultra = 512,
-            Extreme = 1024,
+            Low64 = 64,
+            Medium128 = 128,
+            High256 = 256,
+            Ultra512 = 512,
+            Extreme1024 = 1024,
         }
 
-        [SerializeField] PatchSize _renderingPatchSize = PatchSize.High;
-        [SerializeField] PatchSize _physicsPatchSize = PatchSize.Medium;
+        [SerializeField] PatchSize _renderingPatchSize = PatchSize.High256;
+        [SerializeField] PatchSize _physicsPatchSize = PatchSize.Medium128;
 
         public PatchSize renderingPatchSize { get => _renderingPatchSize; set => this.SetValueAndNotify(ref _renderingPatchSize, value); }
         public PatchSize physicsPatchSize { get => _physicsPatchSize; set => this.SetValueAndNotify(ref _physicsPatchSize, value); }

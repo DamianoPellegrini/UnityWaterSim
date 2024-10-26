@@ -56,7 +56,10 @@ namespace NN
             {
                 patchSizeField.RegisterValueChangedCallback(OnPatchSizeChange);
             }
-            RecalculateTotalEntries(sampleCountSlider.value, (int)(WaterSimulationSettings.PatchSize)patchSizeField.value); // Calculate on create
+            if (patchSizeField != null && sampleCountSlider != null)
+            {
+                RecalculateTotalEntries(sampleCountSlider.value, (int)(WaterSimulationSettings.PatchSize)patchSizeField.value); // Calculate on create
+            }
         }
 
         private void DisableButtonIfNullRef(ChangeEvent<UnityEngine.Object> e)
@@ -111,12 +114,10 @@ namespace NN
                 var path = EditorUtility.SaveFilePanel(
                     "Save generated data as CSV",
                     Application.dataPath,
-                    $"{spectrum.name}.csv",
+                    $"{spectrum.name}{patchField.value}.csv",
                     "csv"
                 );
                 if (path.Length <= 0) return;
-
-                // TODO: Sistema stream che non va dopo il primo round
 
                 using (var fStream = new FileStream(path, FileMode.Create, FileAccess.Write))
                 {
@@ -124,9 +125,12 @@ namespace NN
                     var bytes = new ASCIIEncoding().GetBytes(NNDataGenerator.CSVFormat(spectrum) + Environment.NewLine);
                     fStream.Write(bytes, 0, bytes.Length);
 
-                    for (int i = 0; i < sampleCountSlider.value; i++)
+                    var time = Time.time;
+                    var deltaTime = Time.deltaTime;
+
+                    for (int i = 0; i < sampleCountSlider.value; i++, time += deltaTime)
                     {
-                        gen.Generate(fStream, spectrum, Time.time, Time.deltaTime, noise);
+                        gen.Generate(fStream, spectrum, time, deltaTime, noise);
                     }
                 }
             }

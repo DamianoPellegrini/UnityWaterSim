@@ -166,7 +166,7 @@ Material:
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _RefractionStrength: 2
-    - _Roughness: 0.3
+    - _Roughness: 0.08
     - _ScatterShadowStrength: 0.15
     - _ScatterStrength: 0.217
     - _Smoothness: 0.5

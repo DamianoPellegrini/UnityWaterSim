@@ -1,5 +1,48 @@
 {
   "dependencies": {
+    "com.github.asus4.onnxruntime": {
+      "version": "0.1.14",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://registry.npmjs.com"
+    },
+    "com.github.asus4.onnxruntime-extensions": {
+      "version": "0.1.14",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.github.asus4.onnxruntime": "0.1.14"
+      },
+      "url": "https://registry.npmjs.com"
+    },
+    "com.github.asus4.onnxruntime.linux-x64-gpu": {
+      "version": "0.1.14",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.github.asus4.onnxruntime": "0.1.14"
+      },
+      "url": "https://registry.npmjs.com"
+    },
+    "com.github.asus4.onnxruntime.unity": {
+      "version": "0.1.14",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.github.asus4.onnxruntime": "0.1.14"
+      },
+      "url": "https://registry.npmjs.com"
+    },
+    "com.github.asus4.onnxruntime.win-x64-gpu": {
+      "version": "0.1.14",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.github.asus4.onnxruntime": "0.1.14"
+      },
+      "url": "https://registry.npmjs.com"
+    },
     "com.unity.ai.navigation": {
       "version": "2.0.0",
       "depth": 0,
@@ -19,8 +62,8 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.burst": {
-      "version": "1.8.16",
-      "depth": 2,
+      "version": "1.8.17",
+      "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.unity.mathematics": "1.2.1",
@@ -36,8 +79,8 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.collections": {
-      "version": "2.4.1",
-      "depth": 2,
+      "version": "2.4.3",
+      "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.unity.burst": "1.8.13",
@@ -156,6 +199,17 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+    "com.unity.sentis": {
+      "version": "2.1.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.burst": "1.8.17",
+        "com.unity.collections": "2.4.3",
+        "com.unity.modules.imageconversion": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.shadergraph": {
       "version": "17.0.3",
       "depth": 1,
@@ -178,6 +232,16 @@
       "source": "registry",
       "dependencies": {
         "com.unity.sysroot": "2.0.10"
+      },
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.terrain-tools": {
+      "version": "5.1.2",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.modules.terrain": "1.0.0",
+        "com.unity.modules.terrainphysics": "1.0.0"
       },
       "url": "https://packages.unity.com"
     },

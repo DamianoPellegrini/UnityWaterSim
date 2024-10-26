@@ -1,5 +1,6 @@
 using System;
-using System.ComponentModel;
+using System.IO;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Water.Spectrum;
@@ -215,6 +216,66 @@ namespace Water
             if (renderingFFT != null) { renderingFFT.Dispose(); }
             if (physicsFFT != null) { physicsFFT.Dispose(); }
             if (displacementReadback != null) { DestroyImmediate(displacementReadback); }
+        }
+
+        static Texture2D ToTexture2D(RenderTexture rt)
+        {
+            Texture2D tex = new Texture2D(rt.width, rt.height, UnityEngine.Experimental.Rendering.DefaultFormat.LDR, UnityEngine.Experimental.Rendering.TextureCreationFlags.DontInitializePixels | UnityEngine.Experimental.Rendering.TextureCreationFlags.DontUploadUponCreate);
+            // ReadPixels looks at the active RenderTexture.
+            var rtToRestore = RenderTexture.active;
+            RenderTexture.active = rt;
+            tex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+            tex.Apply();
+            RenderTexture.active = rtToRestore;
+            return tex;
+        }
+
+        [ContextMenu("Export To PPM")]
+        private void ExportImages()
+        {
+            var path = EditorUtility.SaveFolderPanel("aaa", "out", "out images");
+
+            var samples = ToTexture2D(cascade2.spectrumSamplesTexture).GetPixels();
+            WriteToPBM(Path.Combine(path, "samples.ppm"), samples, 100);
+
+            var initial = ToTexture2D(cascade2.initialSpectrumTexture).GetPixels();
+            WriteToPBM(Path.Combine(path, "initial.ppm"), initial, 1.5f);
+
+            var displ = ToTexture2D(cascade2.displacement).GetPixels();
+            var derivs = ToTexture2D(cascade2.derivatives).GetPixels();
+            var turbs = ToTexture2D(cascade2.turbulence).GetPixels();
+            WriteToPBM(Path.Combine(path, "displ.ppm"), displ, 5);
+            WriteToPBM(Path.Combine(path, "derivs.ppm"), derivs);
+            WriteToPBM(Path.Combine(path, "turbs.ppm"), turbs, 0.2f);
+        }
+
+
+        private void WriteToPBM(string path, Color[] pixels, float mult = 1)
+        {
+            using (var fStream = new FileStream(path, FileMode.Create, FileAccess.Write))
+            {
+                var size = cascade2.complexSpectrumTexture.width;
+                // Write header
+                var bytes = new System.Text.ASCIIEncoding().GetBytes($"P6\n{size} {size}\n255\n");
+                fStream.Write(bytes, 0, bytes.Length);
+
+                var time = Time.time;
+                var deltaTime = Time.deltaTime;
+
+                // using (var w = new StreamWriter(fStream)) {
+                foreach (var pixel in pixels)
+                {
+                    // w.Write($"{pixel.r} ");
+                    // w.Write($"{pixel.g} ");
+                    // w.Write($"{pixel.b} ");
+
+                    // Debug.LogWarning("" + pixel.ToString());
+                    fStream.WriteByte((byte) (pixel.r * mult * 255));
+                    fStream.WriteByte((byte) (pixel.g * mult * 255));
+                    fStream.WriteByte((byte) (pixel.b * mult * 255));
+                }
+                // }
+            }
         }
     }
 }

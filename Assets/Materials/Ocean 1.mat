@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Ocean
+  m_Name: Ocean 1
   m_Shader: {fileID: 4800000, guid: f4774e6633fc0400599e671737eb4eb9, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -191,7 +191,7 @@ Material:
     - _WavePeakScatterStrength: 0.207
     - _ZWrite: 1
     m_Colors:
-    - _BubbleColor: {r: 0, g: 0.23913395, b: 0.2509804, a: 1}
+    - _BubbleColor: {r: 0, g: 0.14544308, b: 0.2509804, a: 1}
     - _Color: {r: 0.03457636, g: 0.12297464, b: 0.1981132, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _FoamColor: {r: 1, g: 1, b: 1, a: 0.1764706}
@@ -200,8 +200,8 @@ Material:
     - _ReflectionColor: {r: 0.8679245, g: 0.8679245, b: 0.8679245, a: 1}
     - _SSS: {r: 0.10453009, g: 0.8207547, b: 0.80671114, a: 1}
     - _SSSColor: {r: 0.1541919, g: 0.8857628, b: 0.990566, a: 1}
-    - _ScatterColor: {r: 0, g: 1, b: 0.81066275, a: 1}
+    - _ScatterColor: {r: 0, g: 0.3483589, b: 0.5294118, a: 1}
     - _Vect: {r: 1, g: 0, b: 0, a: 0}
-    - _WaterFogColor: {r: 0, g: 0, b: 0.24999997, a: 1}
+    - _WaterFogColor: {r: 0.003921569, g: 0.14117648, b: 0.2509804, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

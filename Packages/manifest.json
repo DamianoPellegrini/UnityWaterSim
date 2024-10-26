@@ -1,5 +1,19 @@
 {
+  "scopedRegistries": [
+    {
+      "name": "NPM",
+      "url": "https://registry.npmjs.com",
+      "scopes": [
+        "com.github.asus4"
+      ]
+    }
+  ],
   "dependencies": {
+    "com.github.asus4.onnxruntime": "0.1.14",
+    "com.github.asus4.onnxruntime-extensions": "0.1.14",
+    "com.github.asus4.onnxruntime.linux-x64-gpu": "0.1.14",
+    "com.github.asus4.onnxruntime.unity": "0.1.14",
+    "com.github.asus4.onnxruntime.win-x64-gpu": "0.1.14",
     "com.unity.ai.navigation": "2.0.0",
     "com.unity.collab-proxy": "2.4.3",
     "com.unity.ide.rider": "3.0.28",
@@ -7,6 +21,8 @@
     "com.unity.inputsystem": "1.8.2",
     "com.unity.recorder": "5.1.1",
     "com.unity.render-pipelines.universal": "17.0.3",
+    "com.unity.sentis": "2.1.0",
+    "com.unity.terrain-tools": "5.1.2",
     "com.unity.test-framework": "1.4.4",
     "com.unity.timeline": "1.8.7",
     "com.unity.toolchain.macos-arm64-linux-x86_64": "2.0.3",

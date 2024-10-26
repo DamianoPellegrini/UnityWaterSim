@@ -170,15 +170,18 @@ Shader "Universal Render Pipeline/Nature/Water/Tessendorf"
 		float SampleTurbulence(float2 worldXZ, float3 lodWeights) {
 			float4 uvst = float4(worldXZ, 0,0);
 
-			float jacobian = tex2Dlod(_Turbulence_c0, uvst / _LengthScale0).r * lodWeights[0];
-			jacobian = min(1, max(0, (-jacobian + _FoamBiasLOD0) * _FoamScale));
-			#if defined(MID) || defined(CLOSE)
-			jacobian += tex2Dlod(_Turbulence_c1, uvst / _LengthScale1).r * lodWeights[1];
-			jacobian = min(1, max(0, (-jacobian + _FoamBiasLOD1) * _FoamScale));
-			#endif
 			#if defined(CLOSE)
-			jacobian += tex2Dlod(_Turbulence_c2, uvst / _LengthScale1).r * lodWeights[2];
+			float jacobian = tex2D(_Turbulence_c0, uvst / _LengthScale0).x 
+				+ tex2D(_Turbulence_c1, uvst / _LengthScale1).x 
+				+ tex2D(_Turbulence_c2, uvst / _LengthScale2).x ;
 			jacobian = min(1, max(0, (-jacobian + _FoamBiasLOD2) * _FoamScale));
+			#elif defined(MID)
+			float jacobian = tex2D(_Turbulence_c0, uvst / _LengthScale0).x 
+				+ tex2D(_Turbulence_c1, uvst / _LengthScale1).x ;
+			jacobian = min(1, max(0, (-jacobian + _FoamBiasLOD1) * _FoamScale));
+			#else
+			float jacobian = tex2D(_Turbulence_c0, uvst / _LengthScale0).x;
+			jacobian = min(1, max(0, (-jacobian + _FoamBiasLOD0) * _FoamScale));
 			#endif
 
 			return jacobian;
@@ -475,8 +478,9 @@ Shader "Universal Render Pipeline/Nature/Water/Tessendorf"
 				// Foam
 				// TODO: Fix jacobian foam
 				float jacobian = SampleTurbulence(input.positionWS.xz, input.lodWeights);
-				// float foam = lerp(0.0f, saturate(jacobian), pow(1 - surfaceDepth, 2));
-				float foam = 0;
+				// float foam = lerp(0.0f, saturate(jacobian), 1 - surfDepth);
+				float foam = jacobian;
+				// float foam = 0;
 
 				// half depthEdge = saturate(rawDepth * 20);
 				// half depthAdd = saturate(1 - rawDepth * 4) * 0.5;
